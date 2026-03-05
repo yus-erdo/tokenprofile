@@ -13,7 +13,6 @@ Claude Code Hook (Stop event)
 ┌─────────────────────────┐
 │  Next.js on Vercel       │
 │  ├─ /api/ingest          │  validates API key, stores session data
-│  ├─ /api/auth/*          │  Supabase Auth (GitHub OAuth)
 │  ├─ /                    │  landing page
 │  ├─ /sign-in             │  sign in
 │  ├─ /[username]          │  public profile + heatmap
@@ -22,10 +21,11 @@ Claude Code Hook (Stop event)
           │
           ▼
 ┌─────────────────────────┐
-│  Supabase                │
+│  Firebase                │
 │  ├─ Auth (GitHub OAuth)  │
-│  ├─ users table          │
-│  └─ sessions table       │
+│  └─ Firestore            │
+│     ├─ users collection  │
+│     └─ sessions collection│
 └─────────────────────────┘
 ```
 
@@ -35,47 +35,73 @@ Claude Code Hook (Stop event)
 |-------|--------|
 | Framework | Next.js 15 (App Router) |
 | Language | TypeScript |
-| Auth | Supabase Auth (GitHub OAuth) |
-| Database | Supabase Postgres |
-| DB Client | Supabase JS |
+| Auth | Firebase Auth (GitHub OAuth) |
+| Database | Cloud Firestore |
+| DB Client | Firebase Admin SDK (server), Firebase JS SDK (client) |
 | Styling | Tailwind CSS |
 | Heatmap | Custom SVG component |
 | Deployment | Vercel |
 | Package manager | bun |
 
-## Database Schema
+## Firestore Schema
 
-### `users` (extends Supabase auth.users)
+### `users` collection
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | matches auth.users.id |
-| username | text (unique) | from GitHub username |
-| display_name | text | editable |
-| bio | text | editable |
-| avatar_url | text | from GitHub, editable |
-| api_key | text (unique) | generated on signup, used by hooks |
-| created_at | timestamptz | auto |
+Document ID = Firebase Auth UID
 
-### `sessions` (token consumption logs)
+```
+{
+  username: string        // from GitHub username, unique
+  displayName: string     // editable
+  bio: string             // editable
+  avatarUrl: string       // from GitHub, editable
+  apiKey: string          // generated on signup, used by hooks
+  createdAt: Timestamp
+}
+```
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | auto-generated |
-| user_id | uuid (FK → users) | |
-| provider | text | "anthropic", "openai", etc. |
-| model | text | "claude-opus-4-6", "gpt-4", etc. |
-| input_tokens | int | |
-| output_tokens | int | |
-| total_tokens | int | |
-| cost_usd | numeric | estimated cost |
-| project | text | repo/project name |
-| duration_seconds | int | session duration |
-| num_turns | int | conversation turns |
-| tools_used | jsonb | `{"Read": 5, "Edit": 3}` |
-| metadata | jsonb | extensible for future fields |
-| session_at | timestamptz | when session happened |
-| created_at | timestamptz | auto |
+### `sessions` collection
+
+Document ID = auto-generated
+
+```
+{
+  userId: string          // references users doc ID
+  provider: string        // "anthropic", "openai", etc.
+  model: string           // "claude-opus-4-6", "gpt-4", etc.
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+  costUsd: number         // estimated cost
+  project: string         // repo/project name
+  durationSeconds: number
+  numTurns: number
+  toolsUsed: map          // { "Read": 5, "Edit": 3 }
+  metadata: map           // extensible for future fields
+  sessionId: string       // Claude Code session ID
+  sessionAt: Timestamp    // when session happened
+  createdAt: Timestamp
+}
+```
+
+### Firestore Security Rules
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users: anyone can read, only owner can update
+    match /users/{userId} {
+      allow read: if true;
+      allow update: if request.auth != null && request.auth.uid == userId;
+    }
+    // Sessions: anyone can read, inserts handled server-side via Admin SDK
+    match /sessions/{sessionId} {
+      allow read: if true;
+    }
+  }
+}
+```
 
 ## Pages
 
@@ -83,7 +109,7 @@ Claude Code Hook (Stop event)
 Simple hero with sign-in CTA and demo heatmap.
 
 ### `/sign-in` — Auth
-"Sign in with GitHub" button via Supabase Auth.
+"Sign in with GitHub" button via Firebase Auth.
 
 ### `/[username]` — Public profile
 - Left sidebar: avatar, display name, username, bio
@@ -98,7 +124,7 @@ Simple hero with sign-in CTA and demo heatmap.
 
 ## API Routes
 
-- `POST /api/ingest` — receive session data, validate API key, store
+- `POST /api/ingest` — receive session data, validate API key, store in Firestore
 - `GET /api/users/[username]` — public profile + aggregated stats
 - `GET /api/users/[username]/sessions` — paginated session list
 - `PATCH /api/users/me` — update profile
