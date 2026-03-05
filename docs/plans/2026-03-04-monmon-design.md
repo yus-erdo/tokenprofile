@@ -1,4 +1,6 @@
-# MonMon — LLM Token Usage Monitor
+# Token Profile — LLM Token Usage Monitor
+
+**URL:** https://www.tokenprofile.app/
 
 ## Overview
 
@@ -135,7 +137,7 @@ Simple hero with sign-in CTA and demo heatmap.
 Fires on `Stop` event, sends session data via curl:
 
 ```bash
-curl -s -X POST https://monmon.vercel.app/api/ingest \
+curl -s -X POST https://www.tokenprofile.app/api/ingest \
   -H "Authorization: Bearer $MONMON_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"provider":"anthropic","model":"...","input_tokens":...,"output_tokens":...}'

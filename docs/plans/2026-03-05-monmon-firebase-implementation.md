@@ -1,4 +1,4 @@
-# MonMon Implementation Plan (Firebase)
+# Token Profile Implementation Plan (Firebase)
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -19,7 +19,7 @@
 **Step 1: Create Next.js project with bun**
 
 ```bash
-cd /Users/yusuf.erdogan/work/monmon
+cd /Users/yusuf.erdogan/work/tokenprofile
 bunx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias="@/*" --use-bun
 ```
 
@@ -168,7 +168,7 @@ This is a manual step done in the Firebase Console + GitHub.
 **Step 1: Create Firebase project**
 
 - Go to https://console.firebase.google.com
-- Create new project "monmon"
+- Create new project "tokenprofile"
 - Enable Firestore (start in test mode, we'll add rules later)
 - Enable Authentication > Sign-in method > GitHub
 
@@ -176,9 +176,9 @@ This is a manual step done in the Firebase Console + GitHub.
 
 - Go to https://github.com/settings/developers
 - Create new OAuth App:
-  - Name: MonMon
+  - Name: Token Profile
   - Homepage URL: `http://localhost:3000` (update to prod URL later)
-  - Authorization callback URL: copy from Firebase Console (looks like `https://monmon-XXXXX.firebaseapp.com/__/auth/handler`)
+  - Authorization callback URL: copy from Firebase Console (looks like `https://tokenprofile-XXXXX.firebaseapp.com/__/auth/handler`)
 - Copy Client ID and Client Secret into Firebase Console GitHub provider settings
 
 **Step 3: Get Firebase config**
@@ -286,7 +286,7 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-6">
-        <h1 className="text-3xl font-bold">Sign in to MonMon</h1>
+        <h1 className="text-3xl font-bold">Sign in to Token Profile</h1>
         <p className="text-gray-600">Track your LLM token usage</p>
         <button
           onClick={signInWithGitHub}
@@ -1099,7 +1099,7 @@ export function Nav() {
   return (
     <nav className="border-b">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="text-lg font-bold">MonMon</Link>
+        <Link href="/" className="text-lg font-bold">Token Profile</Link>
         <div className="flex items-center gap-4">
           {user ? (
             <>
@@ -1124,7 +1124,7 @@ Add `<Nav />` inside the body in `app/layout.tsx`, before `{children}`.
 
 **Step 3: Create landing page**
 
-Replace `app/page.tsx` with a simple hero: title "MonMon", subtitle "Track your LLM token usage", and sign-in CTA.
+Replace `app/page.tsx` with a simple hero: title "Token Profile", subtitle "Track your LLM token usage", and sign-in CTA.
 
 **Step 4: Commit**
 
@@ -1138,22 +1138,22 @@ git commit -m "add navigation and landing page"
 ### Task 11: Claude Code Hook Script
 
 **Files:**
-- Create: `scripts/monmon-hook.sh`
+- Create: `scripts/tokenprofile-hook.sh`
 
 **Step 1: Create the hook script**
 
 ```bash
 #!/bin/bash
-# MonMon Claude Code Stop Hook
+# Token Profile Claude Code Stop Hook
 # Usage: Add to ~/.claude/settings.json under hooks.Stop
 #
 # Reads session data from stdin JSON (session_id, transcript_path, cwd)
-# Parses transcript for token usage and sends to MonMon API
+# Parses transcript for token usage and sends to Token Profile API
 
-MONMON_API_KEY="${MONMON_API_KEY:-}"
-MONMON_URL="${MONMON_URL:-https://monmon.vercel.app}"
+TOKEN_PROFILE_API_KEY="${TOKEN_PROFILE_API_KEY:-}"
+TOKEN_PROFILE_URL="${TOKEN_PROFILE_URL:-https://www.tokenprofile.app}"
 
-if [ -z "$MONMON_API_KEY" ]; then
+if [ -z "$TOKEN_PROFILE_API_KEY" ]; then
   exit 0
 fi
 
@@ -1190,8 +1190,8 @@ TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
 
 if [ "$TOTAL_TOKENS" -eq 0 ]; then exit 0; fi
 
-curl -s -X POST "$MONMON_URL/api/ingest" \
-  -H "Authorization: Bearer $MONMON_API_KEY" \
+curl -s -X POST "$TOKEN_PROFILE_URL/api/ingest" \
+  -H "Authorization: Bearer $TOKEN_PROFILE_API_KEY" \
   -H "Content-Type: application/json" \
   -d "$(jq -n \
     --arg provider "anthropic" \
@@ -1209,7 +1209,7 @@ curl -s -X POST "$MONMON_URL/api/ingest" \
 **Step 2: Make executable and commit**
 
 ```bash
-chmod +x scripts/monmon-hook.sh
+chmod +x scripts/tokenprofile-hook.sh
 git add scripts/
 git commit -m "add Claude Code Stop hook script for token ingestion"
 ```
@@ -1269,10 +1269,10 @@ git commit -m "add Vercel deployment configuration"
 
 **Step 2: Test ingest API**
 ```bash
-curl -X POST https://monmon.vercel.app/api/ingest \
+curl -X POST https://www.tokenprofile.app/api/ingest \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"provider":"anthropic","model":"claude-opus-4-6","input_tokens":5000,"output_tokens":2000,"total_tokens":7000,"project":"monmon"}'
+  -d '{"provider":"anthropic","model":"claude-opus-4-6","input_tokens":5000,"output_tokens":2000,"total_tokens":7000,"project":"tokenprofile"}'
 ```
 
 Expected: `{"success":true}`
