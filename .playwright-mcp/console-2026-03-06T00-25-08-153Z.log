@@ -1,0 +1,3 @@
+[    2010ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://tokenprofile.vercel.app/api/users/me:0
+[   41008ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://tokenprofile.vercel.app/favicon.ico:0
+[   45346ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://tokenprofile.vercel.app/api/users/me:0

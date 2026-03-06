@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useAuth } from "@/lib/firebase/auth-context";
+import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { auth, db } from "@/lib/firebase/client";
 import { useEffect, useState } from "react";
 
 export function Nav() {
@@ -29,6 +30,12 @@ export function Nav() {
                 <Link href={`/${username}`} className="text-sm text-gray-600 hover:text-gray-900">Profile</Link>
               )}
               <Link href="/settings" className="text-sm text-gray-600 hover:text-gray-900">Settings</Link>
+              <button
+                onClick={() => signOut(auth)}
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                Sign out
+              </button>
             </>
           ) : (
             <Link href="/sign-in" className="text-sm px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800">Sign in</Link>
