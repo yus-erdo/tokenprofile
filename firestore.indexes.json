@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "sessionAt", "order": "DESCENDING" }
+      ]
+    }
+  ]
+}

@@ -28,13 +28,19 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const startOfYear = new Date(`${year}-01-01T00:00:00Z`);
   const endOfYear = new Date(`${year}-12-31T23:59:59Z`);
 
-  const sessionsSnapshot = await adminDb
-    .collection("sessions")
-    .where("userId", "==", userDoc.id)
-    .where("sessionAt", ">=", startOfYear)
-    .where("sessionAt", "<=", endOfYear)
-    .orderBy("sessionAt", "desc")
-    .get();
+  let sessionsSnapshot;
+  try {
+    sessionsSnapshot = await adminDb
+      .collection("sessions")
+      .where("userId", "==", userDoc.id)
+      .where("sessionAt", ">=", startOfYear)
+      .where("sessionAt", "<=", endOfYear)
+      .orderBy("sessionAt", "desc")
+      .get();
+  } catch {
+    // Composite index may not exist yet — fall back to no sessions
+    sessionsSnapshot = { docs: [] };
+  }
 
   // Build heatmap data and stats
   const heatmapData: Record<string, number> = {};
