@@ -1,3 +1,0 @@
-[   12303ms] An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error.
-[  174907ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tokenprofile.vercel.app/yusuf-erdo:0
-[  174986ms] An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error.

@@ -1,7 +1,0 @@
-[   65881ms] [ERROR] Sign in failed: FirebaseError: Missing or insufficient permissions. @ https://tokenprofile.vercel.app/_next/static/chunks/9c686d09158c1a4f.js:0
-[   65891ms] Missing or insufficient permissions.
-[   68313ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://tokenprofile.vercel.app/api/users/me:0
-[  111339ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tokenprofile.vercel.app/api/users/me:0
-[  120852ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://tokenprofile.vercel.app/api/users/me:0
-[  172672ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://tokenprofile.vercel.app/api/users/me:0
-[  176970ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://tokenprofile.vercel.app/api/users/me:0

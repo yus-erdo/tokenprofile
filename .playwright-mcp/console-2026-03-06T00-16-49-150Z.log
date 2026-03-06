@@ -1,5 +1,0 @@
-[    4599ms] [ERROR] Sign in failed: FirebaseError: Firebase: Error (auth/unauthorized-domain).
-    at tu (https://tokenprofile.vercel.app/_next/static/chunks/22d2358846e73b56.js:15:28279)
-    at ts (https://tokenprofile.vercel.app/_next/static/chunks/22d2358846e73b56.js:15:27842)
-    at nD (https://tokenprofile.vercel.app/_next/static/chunks/22d2358846e73b56.js:15:97984) @ https://tokenprofile.vercel.app/_next/static/chunks/9c686d09158c1a4f.js:0
-[    5683ms] [WARNING] Info: The current domain is not authorized for OAuth operations. This will prevent signInWithPopup, signInWithRedirect, linkWithPopup and linkWithRedirect from working. Add your domain (tokenprofile.vercel.app) to the OAuth redirect domains list in the Firebase console -> Authentication -> Settings -> Authorized domains tab. @ https://monmon-71f78.firebaseapp.com/__/auth/iframe.js:310
