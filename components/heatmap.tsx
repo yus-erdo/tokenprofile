@@ -66,11 +66,15 @@ export function Heatmap({ data, year }: HeatmapProps) {
   const labelWidth = 30;
   const headerHeight = 20;
 
+  const svgWidth = labelWidth + weeks.length * (cellSize + gap);
+  const svgHeight = headerHeight + 7 * (cellSize + gap) + 20;
+
   return (
-    <div className="overflow-x-auto">
+    <div>
       <svg
-        width={labelWidth + weeks.length * (cellSize + gap)}
-        height={headerHeight + 7 * (cellSize + gap) + 20}
+        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+        width="100%"
+        height="auto"
       >
         {months.map(({ month, week }) => (
           <text key={`month-${month}`} x={labelWidth + week * (cellSize + gap)} y={12} className="fill-gray-500" fontSize={10}>
