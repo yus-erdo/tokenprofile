@@ -13,7 +13,15 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push("/settings");
+      // Redirect existing users to their profile
+      const userRef = doc(db, "users", user.uid);
+      getDoc(userRef).then((snap) => {
+        if (snap.exists()) {
+          router.push(`/${snap.data().username}`);
+        } else {
+          router.push("/settings");
+        }
+      });
     }
   }, [user, loading, router]);
 
@@ -45,7 +53,13 @@ export default function SignInPage() {
         });
       }
 
-      router.push("/settings");
+      // Existing user -> profile, new user -> settings
+      if (userSnap.exists()) {
+        const existingData = userSnap.data();
+        router.push(`/${existingData.username}`);
+      } else {
+        router.push("/settings");
+      }
     } catch (error) {
       console.error("Sign in failed:", error);
     }
