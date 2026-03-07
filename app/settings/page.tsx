@@ -85,53 +85,53 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
 
       {message && (
-        <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg mb-4">{message}</div>
+        <div className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-4 py-2 rounded-lg mb-4">{message}</div>
       )}
 
-      <section className="border rounded-lg p-6 mb-6">
+      <section className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Profile</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display Name</label>
             <input
               type="text"
               value={profile.displayName || ""}
               onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
             <textarea
               value={profile.bio || ""}
               onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
               rows={3}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900"
             />
           </div>
-          <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50">
+          <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50">
             {saving ? "Saving..." : "Save"}
           </button>
         </div>
       </section>
 
-      <section className="border rounded-lg p-6 mb-6">
+      <section className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">API Key</h2>
-        <p className="text-sm text-gray-600 mb-3">Use this key in your Claude Code hooks to push session data.</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Use this key in your Claude Code hooks to push session data.</p>
         <div className="flex items-center gap-2 mb-4">
-          <code className="flex-1 bg-gray-100 px-3 py-2 rounded text-sm font-mono truncate">{profile.apiKey}</code>
-          <button onClick={copyApiKey} className="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">
+          <code className="flex-1 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded text-sm font-mono truncate">{profile.apiKey}</code>
+          <button onClick={copyApiKey} className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
             {copied ? "Copied!" : "Copy"}
           </button>
-          <button onClick={handleRegenerateKey} className="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50 text-red-600">
+          <button onClick={handleRegenerateKey} className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-red-600 dark:text-red-400">
             Regenerate
           </button>
         </div>
       </section>
 
-      <section className="border rounded-lg p-6">
+      <section className="border border-gray-200 dark:border-gray-800 rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-4">Hook Setup</h2>
-        <p className="text-sm text-gray-600 mb-3">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
           Add a Stop hook to your Claude Code settings to automatically track token usage.
           See the README for the full hook script.
         </p>
