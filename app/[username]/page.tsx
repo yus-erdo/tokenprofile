@@ -75,14 +75,20 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Sidebar */}
-        <div className="w-full md:w-72 flex-shrink-0">
+        {/* Sidebar — compact row on mobile, vertical column on md+ */}
+        <div className="w-full md:w-72 flex-shrink-0 flex flex-row items-center gap-4 md:block">
           {user.avatarUrl && (
-            <img src={user.avatarUrl} alt={user.displayName || user.username} className="w-full rounded-full border border-gray-200" />
+            <img
+              src={user.avatarUrl}
+              alt={user.displayName || user.username}
+              className="w-20 h-20 md:w-full md:h-auto rounded-full border border-gray-200 flex-shrink-0"
+            />
           )}
-          <h1 className="text-2xl font-bold mt-4">{user.displayName || user.username}</h1>
-          <p className="text-gray-500 text-lg">{user.username}</p>
-          {user.bio && <p className="mt-3 text-gray-700">{user.bio}</p>}
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold md:mt-4">{user.displayName || user.username}</h1>
+            <p className="text-gray-500 text-base md:text-lg">{user.username}</p>
+            {user.bio && <p className="mt-1 md:mt-3 text-gray-700 text-sm md:text-base">{user.bio}</p>}
+          </div>
         </div>
 
         {/* Main content */}
@@ -128,13 +134,13 @@ export default async function ProfilePage({ params, searchParams }: Props) {
           <h2 className="text-lg font-semibold mb-3">Recent Sessions</h2>
           <div className="space-y-2">
             {sessions.slice(0, 20).map((s, i) => (
-              <div key={i} className="flex items-center justify-between border rounded-lg px-4 py-3 text-sm">
-                <div className="flex items-center gap-3">
-                  <span className="font-medium">{s.model || "unknown"}</span>
-                  <span className="text-gray-400">{s.provider}</span>
-                  {s.project && <span className="text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{s.project}</span>}
+              <div key={i} className="flex flex-col sm:flex-row sm:items-center sm:justify-between border rounded-lg px-4 py-3 text-sm gap-2 sm:gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="font-medium truncate">{s.model || "unknown"}</span>
+                  <span className="text-gray-400 shrink-0">{s.provider}</span>
+                  {s.project && <span className="text-gray-500 bg-gray-100 px-2 py-0.5 rounded shrink-0">{s.project}</span>}
                 </div>
-                <div className="flex items-center gap-4 text-gray-500">
+                <div className="flex items-center gap-4 text-gray-500 shrink-0">
                   <span>{(s.totalTokens || 0).toLocaleString()} tokens</span>
                   <span>${Number(s.costUsd || 0).toFixed(4)}</span>
                   <span>{new Date(s.sessionAt).toLocaleDateString()}</span>
