@@ -1,4 +1,5 @@
 import { adminDb } from "@/lib/firebase/admin";
+import { rateLimiter } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -21,6 +22,11 @@ export async function POST(request: Request) {
   }
 
   const userDoc = usersSnapshot.docs[0];
+
+  const { success } = await rateLimiter.limit(userDoc.id);
+  if (!success) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
 
   let body: Record<string, unknown>;
   try {
