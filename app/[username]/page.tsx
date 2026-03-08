@@ -5,6 +5,7 @@ import { ProfileSidebar } from "@/components/profile-sidebar";
 import { ProfileTabs } from "@/components/profile-tabs";
 import { DeveloperTab } from "@/components/developer-tab";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { OnboardingWrapper } from "@/components/onboarding-wrapper";
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -85,10 +86,14 @@ export default async function ProfilePage({ params, searchParams }: Props) {
     avatarUrl: user.avatarUrl || "",
   };
 
+  const hasOnboarded = user.hasOnboarded !== false; // treat missing as onboarded (existing users)
+  const apiKey = user.apiKey || "";
+
   const isDeveloperTab = tab === "developer";
 
   return (
     <div className="max-w-6xl mx-auto px-4">
+      <OnboardingWrapper hasOnboarded={hasOnboarded} apiKey={apiKey} userId={userDoc.id} />
       {/* GitHub-style header — border line that avatar overlaps */}
       <div className="relative hidden md:block h-[56px] mt-8">
         {/* Avatar — positioned so it starts at the top and extends past the border */}

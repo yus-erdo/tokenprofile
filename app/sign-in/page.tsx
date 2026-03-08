@@ -57,13 +57,14 @@ export default function SignInPage() {
       const userRef = doc(db, "users", firebaseUser.uid);
       const userSnap = await getDoc(userRef);
 
+      // Get GitHub username from provider data
+      const githubUsername =
+        firebaseUser.providerData[0]?.displayName ||
+        firebaseUser.displayName ||
+        firebaseUser.email?.split("@")[0] ||
+        firebaseUser.uid;
+
       if (!userSnap.exists()) {
-        // Get GitHub username from provider data
-        const githubUsername =
-          firebaseUser.providerData[0]?.displayName ||
-          firebaseUser.displayName ||
-          firebaseUser.email?.split("@")[0] ||
-          firebaseUser.uid;
 
         await setDoc(userRef, {
           username: githubUsername.toLowerCase().replace(/\s+/g, "-"),
