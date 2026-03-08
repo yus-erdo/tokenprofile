@@ -80,6 +80,7 @@ export function Heatmap({ data, year }: HeatmapProps) {
   const labelWidth = 30;
   const headerHeight = 20;
 
+  const legendWidth = 30 + 5 * (cellSize + gap) + 4 + 28;
   const svgWidth = labelWidth + weeks.length * (cellSize + gap);
   const svgHeight = headerHeight + 7 * (cellSize + gap) + 20;
 
@@ -119,7 +120,7 @@ export function Heatmap({ data, year }: HeatmapProps) {
             </rect>
           ))
         )}
-        <g transform={`translate(${labelWidth + (weeks.length - 8) * (cellSize + gap)}, ${headerHeight + 7 * (cellSize + gap) + 5})`}>
+        <g transform={`translate(${svgWidth - legendWidth}, ${headerHeight + 7 * (cellSize + gap) + 5})`}>
           <text x={0} y={10} className="fill-gray-500" fontSize={10}>Less</text>
           {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => (
             <rect key={i} x={30 + i * (cellSize + gap)} y={0} width={cellSize} height={cellSize} rx={2} fill={getColor(ratio === 0 ? 0 : ratio * 100, 100, dark)} />
