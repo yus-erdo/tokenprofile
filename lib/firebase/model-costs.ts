@@ -52,6 +52,7 @@ export async function getModelCosts(): Promise<ModelCostsConfig> {
   return cachedConfig;
 }
 
+// inputTokens includes cache tokens — this function subtracts them to get base input
 export function calculateCost(params: {
   model: string;
   inputTokens: number;
