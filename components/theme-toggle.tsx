@@ -2,33 +2,22 @@
 
 import { useTheme } from "./theme-provider";
 
-const options = [
-  { value: "light" as const, label: "Light", icon: SunIcon },
-  { value: "system" as const, label: "System", icon: MonitorIcon },
-  { value: "dark" as const, label: "Dark", icon: MoonIcon },
-];
-
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
+  const isDark = theme === "dark";
+  const next = () => setTheme(isDark ? "light" : "dark");
+  const Icon = isDark ? MoonIcon : SunIcon;
+
   return (
-    <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-      {options.map(({ value, label, icon: Icon }) => (
-        <button
-          key={value}
-          onClick={() => setTheme(value)}
-          className={`p-1.5 rounded-md transition-colors ${
-            theme === value
-              ? "bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-gray-100"
-              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-          }`}
-          title={label}
-          aria-label={`${label} theme`}
-        >
-          <Icon />
-        </button>
-      ))}
-    </div>
+    <button
+      onClick={next}
+      className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      title={`Theme: ${theme}`}
+      aria-label={`Switch theme (current: ${theme})`}
+    >
+      <Icon />
+    </button>
   );
 }
 

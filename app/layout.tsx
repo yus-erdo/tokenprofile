@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/lib/firebase/auth-context";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Nav } from "@/components/nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,7 +25,6 @@ export default function RootLayout({
       <body className="antialiased bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
         <ThemeProvider>
           <AuthProvider>
-            <Nav />
             {children}
           </AuthProvider>
         </ThemeProvider>
