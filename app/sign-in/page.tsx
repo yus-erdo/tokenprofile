@@ -74,6 +74,8 @@ export default function SignInPage() {
           website: githubBlog,
           apiKey: crypto.randomUUID() + crypto.randomUUID().replace(/-/g, ""),
           createdAt: new Date(),
+          hasOnboarded: false,
+          interests: [],
         });
       }
 
@@ -88,7 +90,8 @@ export default function SignInPage() {
         }
         router.push(`/${existingData.username}`);
       } else {
-        router.push("/settings");
+        const newUsername = githubUsername.toLowerCase().replace(/\s+/g, "-");
+        router.push(`/${newUsername}`);
       }
     } catch (error) {
       console.error("Sign in failed:", error);
