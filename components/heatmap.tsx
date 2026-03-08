@@ -75,8 +75,8 @@ export function Heatmap({ data, year }: HeatmapProps) {
     while (current <= endDate || currentWeek.length > 0) {
       const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
       const entry = data[dateStr];
-      const tokens = entry?.tokens || 0;
-      const completions = entry?.completions || 0;
+      const tokens = entry?.tokens ?? 0;
+      const completions = entry?.completions ?? 0;
       if (tokens > maxVal) maxVal = tokens;
 
       if (current.getDate() === 1 && current >= startDate && current <= endDate) {
@@ -176,12 +176,11 @@ export function Heatmap({ data, year }: HeatmapProps) {
 
       {hoveredCell && (
         <div
-          className="absolute pointer-events-none transition-opacity duration-150"
+          className="absolute pointer-events-none"
           style={{
             left: hoveredCell.x,
             top: hoveredCell.y - 6,
             transform: "translate(-50%, -100%)",
-            opacity: hoveredCell ? 1 : 0,
           }}
         >
           <div
