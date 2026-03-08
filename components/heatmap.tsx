@@ -7,7 +7,7 @@ interface HeatmapProps {
   year: number;
 }
 
-const DAYS = ["Mon", "", "Wed", "", "Fri", "", ""];
+const DAYS = ["", "Mon", "", "Wed", "", "Fri", ""];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function getColor(value: number, max: number, dark: boolean): string {
