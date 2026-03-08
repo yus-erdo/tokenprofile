@@ -17,7 +17,7 @@ fi
 
 if [ -z "$TOKEN_PROFILE_API_KEY" ]; then exit 0; fi
 
-TOKEN_PROFILE_URL="${TOKEN_PROFILE_URL:-https://www.tokenprofile.app}"
+TOKEN_PROFILE_URL="${TOKEN_PROFILE_URL:-https://tokenprofile.app}"
 
 INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty')
