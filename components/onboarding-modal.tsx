@@ -320,7 +320,7 @@ function StepInstallHook({ apiKey, userId, onContinue }: { apiKey: string; userI
                 <span className="text-[10px] text-gray-400 dark:text-gray-600 ml-1.5 font-mono">terminal</span>
               </div>
               <div className="relative bg-gray-950 p-3">
-                <pre className="text-xs font-mono text-green-400 whitespace-pre-wrap break-all leading-relaxed">
+                <pre className="text-xs font-mono text-green-400 whitespace-pre-wrap break-all leading-relaxed pr-14">
                   <span className="text-gray-500">$ </span>{autoCommand}
                 </pre>
                 <button
