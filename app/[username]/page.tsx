@@ -35,11 +35,11 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   let sessionsSnapshot;
   try {
     sessionsSnapshot = await adminDb
-      .collection("sessions")
+      .collection("events")
       .where("userId", "==", userDoc.id)
-      .where("sessionAt", ">=", startOfYear)
-      .where("sessionAt", "<=", endOfYear)
-      .orderBy("sessionAt", "desc")
+      .where("timestamp", ">=", startOfYear)
+      .where("timestamp", "<=", endOfYear)
+      .orderBy("timestamp", "desc")
       .get();
   } catch {
     // Composite index may not exist yet — fall back to no sessions
@@ -54,7 +54,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
 
   const completions: Completion[] = sessionsSnapshot.docs.map((doc) => {
     const s = doc.data();
-    const date = s.sessionAt?.toDate?.().toISOString().split("T")[0] || "";
+    const date = s.timestamp?.toDate?.().toISOString().split("T")[0] || "";
     heatmapData[date] = (heatmapData[date] || 0) + (s.totalTokens || 0);
     totalTokens += s.totalTokens || 0;
     totalCost += Number(s.costUsd || 0);
@@ -66,7 +66,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
       totalTokens: s.totalTokens,
       costUsd: s.costUsd,
       project: s.project,
-      sessionAt: s.sessionAt?.toDate?.().toISOString() || "",
+      timestamp: s.timestamp?.toDate?.().toISOString() || "",
     };
   });
 

@@ -35,8 +35,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  await adminDb.collection("sessions").add({
+  await adminDb.collection("events").add({
     userId: userDoc.id,
+    event: body.event || "Stop",
     provider: body.provider || null,
     model: body.model || null,
     inputTokens: body.input_tokens || 0,
@@ -48,8 +49,7 @@ export async function POST(request: Request) {
     numTurns: body.num_turns || null,
     toolsUsed: body.tools_used || {},
     metadata: body.metadata || {},
-    sessionId: body.session_id || null,
-    sessionAt: body.session_at ? new Date(body.session_at as string) : new Date(),
+    timestamp: body.timestamp ? new Date(body.timestamp as string) : new Date(),
     createdAt: new Date(),
   });
 

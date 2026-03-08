@@ -22,15 +22,15 @@ export async function GET(
   const userId = usersSnapshot.docs[0].id;
 
   let query = adminDb
-    .collection("sessions")
+    .collection("events")
     .where("userId", "==", userId)
-    .orderBy("sessionAt", "desc")
+    .orderBy("timestamp", "desc")
     .limit(limit);
 
   // Cursor-based pagination
   const after = searchParams.get("after");
   if (after) {
-    const afterDoc = await adminDb.collection("sessions").doc(after).get();
+    const afterDoc = await adminDb.collection("events").doc(after).get();
     if (afterDoc.exists) {
       query = query.startAfter(afterDoc);
     }
@@ -41,7 +41,7 @@ export async function GET(
   const completions = sessionsSnapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
-    sessionAt: doc.data().sessionAt?.toDate?.() || doc.data().sessionAt,
+    timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
     createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
   }));
 

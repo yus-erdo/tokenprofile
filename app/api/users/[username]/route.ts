@@ -22,7 +22,7 @@ export async function GET(
 
   // Aggregate stats from sessions
   const sessionsSnapshot = await adminDb
-    .collection("sessions")
+    .collection("events")
     .where("userId", "==", userDoc.id)
     .get();
 

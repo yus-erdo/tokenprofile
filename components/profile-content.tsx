@@ -19,7 +19,7 @@ export interface Completion {
   totalTokens: number;
   costUsd: number;
   project: string | null;
-  sessionAt: string;
+  timestamp: string;
 }
 
 interface ProfileContentProps {
@@ -42,7 +42,7 @@ function computeStats(completions: Completion[]) {
   const modelCounts: Record<string, number> = {};
 
   for (const s of completions) {
-    const date = s.sessionAt.split("T")[0] || "";
+    const date = s.timestamp.split("T")[0] || "";
     heatmapData[date] = (heatmapData[date] || 0) + (s.totalTokens || 0);
     totalTokens += s.totalTokens || 0;
     totalCost += Number(s.costUsd || 0);
@@ -144,11 +144,11 @@ export function ProfileContent({
     const endOfYear = new Date(`${year}-12-31T23:59:59Z`);
 
     const q = query(
-      collection(db, "sessions"),
+      collection(db, "events"),
       where("userId", "==", userId),
-      where("sessionAt", ">=", Timestamp.fromDate(startOfYear)),
-      where("sessionAt", "<=", Timestamp.fromDate(endOfYear)),
-      orderBy("sessionAt", "desc")
+      where("timestamp", ">=", Timestamp.fromDate(startOfYear)),
+      where("timestamp", "<=", Timestamp.fromDate(endOfYear)),
+      orderBy("timestamp", "desc")
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -161,7 +161,7 @@ export function ProfileContent({
           totalTokens: s.totalTokens ?? 0,
           costUsd: s.costUsd ?? 0,
           project: s.project ?? null,
-          sessionAt: s.sessionAt?.toDate?.().toISOString() || "",
+          timestamp: s.timestamp?.toDate?.().toISOString() || "",
         };
       });
 
@@ -253,7 +253,7 @@ export function ProfileContent({
             <div className="flex items-center gap-4 text-gray-500 dark:text-gray-400 shrink-0">
               <span>{(s.totalTokens || 0).toLocaleString()} tokens</span>
               <span>${Number(s.costUsd || 0).toFixed(4)}</span>
-              <span>{new Date(s.sessionAt).toLocaleDateString()}</span>
+              <span>{new Date(s.timestamp).toLocaleDateString()}</span>
             </div>
           </div>
         ))}
