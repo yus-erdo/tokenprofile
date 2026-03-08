@@ -57,7 +57,10 @@ STATS=$(jq -s '
 [ -z "$STATS" ] && exit 0
 debug_json "Parsed stats" "$STATS"
 
-TOTAL_INPUT=$(echo "$STATS" | jq '.input_tokens + .cache_creation + .cache_read')
+INPUT_TOKENS=$(echo "$STATS" | jq '.input_tokens')
+CACHE_CREATION=$(echo "$STATS" | jq '.cache_creation')
+CACHE_READ=$(echo "$STATS" | jq '.cache_read')
+TOTAL_INPUT=$((INPUT_TOKENS + CACHE_CREATION + CACHE_READ))
 TOTAL_OUTPUT=$(echo "$STATS" | jq '.output_tokens')
 TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
 [ "$TOTAL_TOKENS" -eq 0 ] && exit 0
@@ -73,9 +76,11 @@ PAYLOAD=$(jq -n \
   --argjson input_tokens "$TOTAL_INPUT" \
   --argjson output_tokens "$TOTAL_OUTPUT" \
   --argjson total_tokens "$TOTAL_TOKENS" \
+  --argjson cache_creation_tokens "$CACHE_CREATION" \
+  --argjson cache_read_tokens "$CACHE_READ" \
   --arg project "$PROJECT" \
   --argjson num_turns "$NUM_TURNS" \
-  '{event:$event,provider:$provider,model:$model,input_tokens:$input_tokens,output_tokens:$output_tokens,total_tokens:$total_tokens,project:$project,num_turns:$num_turns}')
+  '{event:$event,provider:$provider,model:$model,input_tokens:$input_tokens,output_tokens:$output_tokens,total_tokens:$total_tokens,cache_creation_tokens:$cache_creation_tokens,cache_read_tokens:$cache_read_tokens,project:$project,num_turns:$num_turns}')
 debug_json "Payload" "$PAYLOAD"
 
 if [ "$DEBUG" = "1" ]; then
