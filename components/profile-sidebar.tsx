@@ -5,6 +5,7 @@ import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/client";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface InitialUser {
   displayName: string;
@@ -21,6 +22,7 @@ interface ProfileSidebarProps {
 
 export function ProfileSidebar({ username, initialUser }: ProfileSidebarProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [isOwner, setIsOwner] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -198,8 +200,8 @@ export function ProfileSidebar({ username, initialUser }: ProfileSidebarProps) {
 
       {isOwner && (
         <button
-          onClick={() => signOut(auth)}
-          className="mt-4 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+          onClick={() => signOut(auth).then(() => router.push("/"))}
+          className="mt-4 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-500 hover:underline transition-colors cursor-pointer"
         >
           Sign out
         </button>
