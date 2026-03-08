@@ -1,14 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface HeatmapProps {
-  data: Record<string, number>; // { "2026-01-15": 45000, ... } date -> total_tokens
+  data: Record<string, { tokens: number; completions: number }>;
   year: number;
 }
 
 const DAYS = ["", "Mon", "", "Wed", "", "Fri", ""];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function formatCompact(n: number): string {
+  if (n < 1_000) return n.toString();
+  if (n < 1_000_000) return (n / 1_000).toFixed(n < 10_000 ? 1 : 0) + "K";
+  if (n < 1_000_000_000) return (n / 1_000_000).toFixed(n < 10_000_000 ? 1 : 0) + "M";
+  return (n / 1_000_000_000).toFixed(1) + "B";
+}
+
+function formatDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 function getColor(value: number, max: number, dark: boolean): string {
   if (value === 0) return dark ? "#161b22" : "#ebedf0";
@@ -19,9 +32,19 @@ function getColor(value: number, max: number, dark: boolean): string {
   return dark ? "#39d353" : "#216e39";
 }
 
+interface HoveredCell {
+  x: number;
+  y: number;
+  dateStr: string;
+  tokens: number;
+  completions: number;
+}
+
 export function Heatmap({ data, year }: HeatmapProps) {
   const [dark, setDark] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [hoveredCell, setHoveredCell] = useState<HoveredCell | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -41,8 +64,8 @@ export function Heatmap({ data, year }: HeatmapProps) {
     const start = new Date(startDate);
     start.setDate(start.getDate() - start.getDay());
 
-    const weeksArr: { dateStr: string; value: number }[][] = [];
-    let currentWeek: { dateStr: string; value: number }[] = [];
+    const weeksArr: { dateStr: string; tokens: number; completions: number }[][] = [];
+    let currentWeek: { dateStr: string; tokens: number; completions: number }[] = [];
     let maxVal = 0;
     const monthPositions: { month: number; week: number }[] = [];
 
@@ -51,14 +74,16 @@ export function Heatmap({ data, year }: HeatmapProps) {
 
     while (current <= endDate || currentWeek.length > 0) {
       const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
-      const value = data[dateStr] || 0;
-      if (value > maxVal) maxVal = value;
+      const entry = data[dateStr];
+      const tokens = entry?.tokens || 0;
+      const completions = entry?.completions || 0;
+      if (tokens > maxVal) maxVal = tokens;
 
       if (current.getDate() === 1 && current >= startDate && current <= endDate) {
         monthPositions.push({ month: current.getMonth(), week: weekIndex });
       }
 
-      currentWeek.push({ dateStr, value });
+      currentWeek.push({ dateStr, tokens, completions });
 
       if (current.getDay() === 6) {
         weeksArr.push(currentWeek);
@@ -84,12 +109,32 @@ export function Heatmap({ data, year }: HeatmapProps) {
   const svgWidth = labelWidth + weeks.length * (cellSize + gap);
   const svgHeight = headerHeight + 7 * (cellSize + gap) + 20;
 
+  const handleMouseEnter = (
+    e: React.MouseEvent<SVGRectElement>,
+    day: { dateStr: string; tokens: number; completions: number },
+  ) => {
+    const container = containerRef.current;
+    const rect = e.currentTarget;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const cellRect = rect.getBoundingClientRect();
+
+    setHoveredCell({
+      x: cellRect.left - containerRect.left + cellRect.width / 2,
+      y: cellRect.top - containerRect.top,
+      dateStr: day.dateStr,
+      tokens: day.tokens,
+      completions: day.completions,
+    });
+  };
+
   if (!mounted) {
     return <div style={{ height: svgHeight }} />;
   }
 
   return (
-    <div>
+    <div ref={containerRef} className="relative">
       <svg
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         width="100%"
@@ -114,10 +159,10 @@ export function Heatmap({ data, year }: HeatmapProps) {
               width={cellSize}
               height={cellSize}
               rx={2}
-              fill={getColor(day.value, max, dark)}
-            >
-              <title>{day.dateStr}: {day.value.toLocaleString("en-US")} tokens</title>
-            </rect>
+              fill={getColor(day.tokens, max, dark)}
+              onMouseEnter={(e) => handleMouseEnter(e, day)}
+              onMouseLeave={() => setHoveredCell(null)}
+            />
           ))
         )}
         <g transform={`translate(${svgWidth - legendWidth}, ${headerHeight + 7 * (cellSize + gap) + 5})`}>
@@ -128,6 +173,43 @@ export function Heatmap({ data, year }: HeatmapProps) {
           <text x={30 + 5 * (cellSize + gap) + 4} y={10} className="fill-gray-500" fontSize={10}>More</text>
         </g>
       </svg>
+
+      {hoveredCell && (
+        <div
+          className="absolute pointer-events-none transition-opacity duration-150"
+          style={{
+            left: hoveredCell.x,
+            top: hoveredCell.y - 6,
+            transform: "translate(-50%, -100%)",
+            opacity: hoveredCell ? 1 : 0,
+          }}
+        >
+          <div
+            className="rounded-md px-2.5 py-1.5 text-white text-center shadow-md"
+            style={{
+              backgroundColor: "#24292f",
+              fontSize: 11,
+              lineHeight: "16px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <div className="font-medium">{formatDate(hoveredCell.dateStr)}</div>
+            <div className="opacity-90">
+              {hoveredCell.completions} completion{hoveredCell.completions !== 1 ? "s" : ""} · {formatCompact(hoveredCell.tokens)} tokens
+            </div>
+          </div>
+          <div
+            className="mx-auto"
+            style={{
+              width: 0,
+              height: 0,
+              borderLeft: "5px solid transparent",
+              borderRight: "5px solid transparent",
+              borderTop: "5px solid #24292f",
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
