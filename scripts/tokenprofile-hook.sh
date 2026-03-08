@@ -1,6 +1,6 @@
 #!/bin/bash
 # Token Profile Claude Code Hook
-# Posts session token usage to Token Profile API on SessionEnd
+# Posts completion token usage to Token Profile API on Stop event
 #
 # Env vars:
 #   TOKEN_PROFILE_API_KEY - required, get from tokenprofile.app/settings
@@ -20,7 +20,6 @@ if [ -z "$TOKEN_PROFILE_API_KEY" ]; then exit 0; fi
 TOKEN_PROFILE_URL="${TOKEN_PROFILE_URL:-https://tokenprofile.app}"
 
 INPUT=$(cat)
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty')
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty')
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 PROJECT=$(basename "$CWD" 2>/dev/null || echo "unknown")
@@ -51,6 +50,7 @@ MODEL=$(echo "$STATS" | jq -r '.model')
 NUM_TURNS=$(echo "$STATS" | jq '.num_turns')
 
 PAYLOAD=$(jq -n \
+  --arg event "Stop" \
   --arg provider "anthropic" \
   --arg model "$MODEL" \
   --argjson input_tokens "$TOTAL_INPUT" \
@@ -58,8 +58,7 @@ PAYLOAD=$(jq -n \
   --argjson total_tokens "$TOTAL_TOKENS" \
   --arg project "$PROJECT" \
   --argjson num_turns "$NUM_TURNS" \
-  --arg session_id "$SESSION_ID" \
-  '{provider:$provider,model:$model,input_tokens:$input_tokens,output_tokens:$output_tokens,total_tokens:$total_tokens,project:$project,num_turns:$num_turns,session_id:$session_id}')
+  '{event:$event,provider:$provider,model:$model,input_tokens:$input_tokens,output_tokens:$output_tokens,total_tokens:$total_tokens,project:$project,num_turns:$num_turns}')
 
 curl -s --max-time 10 -X POST "$TOKEN_PROFILE_URL/api/ingest" \
   -H "Authorization: Bearer $TOKEN_PROFILE_API_KEY" \
