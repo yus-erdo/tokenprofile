@@ -56,7 +56,7 @@ export function DeveloperTab() {
 
       <section className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">API Key</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Use this key in your Claude Code hooks to push session data.</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Use this key in your Claude Code hooks to push completion data.</p>
         <div className="flex items-center gap-2 mb-4">
           <code className="flex-1 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded text-sm font-mono truncate">{data.apiKey}</code>
           <button onClick={copyApiKey} className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -71,7 +71,7 @@ export function DeveloperTab() {
       <section className="border border-gray-200 dark:border-gray-800 rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-4">Hook Setup</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-          Add a Stop hook to your Claude Code settings to automatically track token usage.
+          Add a Stop hook to your Claude Code settings to automatically track completions.
           See the README for the full hook script.
         </p>
       </section>

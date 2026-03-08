@@ -12,7 +12,7 @@ import {
 import { db } from "@/lib/firebase/client";
 import { Heatmap } from "@/components/heatmap";
 
-export interface Session {
+export interface Completion {
   id: string;
   model: string | null;
   provider: string | null;
@@ -27,21 +27,21 @@ interface ProfileContentProps {
   username: string;
   year: number;
   years: number[];
-  initialSessions: Session[];
+  initialCompletions: Completion[];
   initialHeatmapData: Record<string, number>;
   initialTotalTokens: number;
   initialTotalCost: number;
   initialFavoriteModel: string;
-  initialSessionCount: number;
+  initialCompletionCount: number;
 }
 
-function computeStats(sessions: Session[]) {
+function computeStats(completions: Completion[]) {
   const heatmapData: Record<string, number> = {};
   let totalTokens = 0;
   let totalCost = 0;
   const modelCounts: Record<string, number> = {};
 
-  for (const s of sessions) {
+  for (const s of completions) {
     const date = s.sessionAt.split("T")[0] || "";
     heatmapData[date] = (heatmapData[date] || 0) + (s.totalTokens || 0);
     totalTokens += s.totalTokens || 0;
@@ -52,7 +52,7 @@ function computeStats(sessions: Session[]) {
   const favoriteModel =
     Object.entries(modelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
 
-  return { heatmapData, totalTokens, totalCost, favoriteModel, sessionCount: sessions.length };
+  return { heatmapData, totalTokens, totalCost, favoriteModel, completionCount: completions.length };
 }
 
 // Highlight styles as inline CSS — bypasses Tailwind processing entirely
@@ -84,19 +84,19 @@ export function ProfileContent({
   username,
   year,
   years,
-  initialSessions,
+  initialCompletions,
   initialHeatmapData,
   initialTotalTokens,
   initialTotalCost,
   initialFavoriteModel,
-  initialSessionCount,
+  initialCompletionCount,
 }: ProfileContentProps) {
-  const [sessions, setSessions] = useState(initialSessions);
+  const [completions, setCompletions] = useState(initialCompletions);
   const [heatmapData, setHeatmapData] = useState(initialHeatmapData);
   const [totalTokens, setTotalTokens] = useState(initialTotalTokens);
   const [totalCost, setTotalCost] = useState(initialTotalCost);
   const [favoriteModel, setFavoriteModel] = useState(initialFavoriteModel);
-  const [sessionCount, setSessionCount] = useState(initialSessionCount);
+  const [completionCount, setCompletionCount] = useState(initialCompletionCount);
   const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
   const [statsFlash, setStatsFlash] = useState(false);
   const isFirstSnapshot = useRef(true);
@@ -152,7 +152,7 @@ export function ProfileContent({
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newSessions: Session[] = snapshot.docs.map((doc) => {
+      const newCompletions: Completion[] = snapshot.docs.map((doc) => {
         const s = doc.data();
         return {
           id: doc.id,
@@ -165,13 +165,13 @@ export function ProfileContent({
         };
       });
 
-      const stats = computeStats(newSessions);
-      setSessions(newSessions);
+      const stats = computeStats(newCompletions);
+      setCompletions(newCompletions);
       setHeatmapData(stats.heatmapData);
       setTotalTokens(stats.totalTokens);
       setTotalCost(stats.totalCost);
       setFavoriteModel(stats.favoriteModel);
-      setSessionCount(stats.sessionCount);
+      setCompletionCount(stats.completionCount);
 
       if (isFirstSnapshot.current) {
         isFirstSnapshot.current = false;
@@ -194,8 +194,8 @@ export function ProfileContent({
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-          <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{sessionCount}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">Sessions</div>
+          <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{completionCount}</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">Completions</div>
         </div>
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
           <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{(totalTokens / 1_000_000).toFixed(1)}M</div>
@@ -232,10 +232,10 @@ export function ProfileContent({
         <Heatmap data={heatmapData} year={year} />
       </div>
 
-      {/* Recent sessions */}
-      <h2 className="text-lg font-semibold mb-3">Recent Sessions</h2>
+      {/* Recent completions */}
+      <h2 className="text-lg font-semibold mb-3">Recent Completions</h2>
       <div className="space-y-2">
-        {sessions.slice(0, 20).map((s) => (
+        {completions.slice(0, 20).map((s) => (
           <div
             key={s.id}
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3 text-sm gap-2 sm:gap-3"
@@ -257,8 +257,8 @@ export function ProfileContent({
             </div>
           </div>
         ))}
-        {sessions.length === 0 && (
-          <p className="text-gray-400 dark:text-gray-500 text-center py-8">No sessions recorded yet</p>
+        {completions.length === 0 && (
+          <p className="text-gray-400 dark:text-gray-500 text-center py-8">No completions recorded yet</p>
         )}
       </div>
     </div>

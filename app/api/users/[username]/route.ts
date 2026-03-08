@@ -49,7 +49,7 @@ export async function GET(
     stats: {
       totalTokens,
       totalCost,
-      sessionCount: sessionsSnapshot.size,
+      completionCount: sessionsSnapshot.size,
       favoriteModel,
     },
   });

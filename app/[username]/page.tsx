@@ -1,6 +1,6 @@
 import { adminDb } from "@/lib/firebase/admin";
 import { notFound } from "next/navigation";
-import { ProfileContent, type Session } from "@/components/profile-content";
+import { ProfileContent, type Completion } from "@/components/profile-content";
 import { ProfileSidebar } from "@/components/profile-sidebar";
 import { ProfileTabs } from "@/components/profile-tabs";
 import { DeveloperTab } from "@/components/developer-tab";
@@ -28,7 +28,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const userDoc = usersSnapshot.docs[0];
   const user = userDoc.data();
 
-  // Fetch sessions for the year
+  // Fetch completions for the year
   const startOfYear = new Date(`${year}-01-01T00:00:00Z`);
   const endOfYear = new Date(`${year}-12-31T23:59:59Z`);
 
@@ -52,7 +52,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   let totalCost = 0;
   const modelCounts: Record<string, number> = {};
 
-  const sessions: Session[] = sessionsSnapshot.docs.map((doc) => {
+  const completions: Completion[] = sessionsSnapshot.docs.map((doc) => {
     const s = doc.data();
     const date = s.sessionAt?.toDate?.().toISOString().split("T")[0] || "";
     heatmapData[date] = (heatmapData[date] || 0) + (s.totalTokens || 0);
@@ -71,7 +71,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   });
 
   const favoriteModel = Object.entries(modelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
-  const sessionCount = sessions.length;
+  const completionCount = completions.length;
 
   const currentYear = new Date().getFullYear();
   const memberSince = user.createdAt?.toDate?.()?.getFullYear() || currentYear;
@@ -128,12 +128,12 @@ export default async function ProfilePage({ params, searchParams }: Props) {
             username={username}
             year={year}
             years={years}
-            initialSessions={sessions}
+            initialCompletions={completions}
             initialHeatmapData={heatmapData}
             initialTotalTokens={totalTokens}
             initialTotalCost={totalCost}
             initialFavoriteModel={favoriteModel}
-            initialSessionCount={sessionCount}
+            initialCompletionCount={completionCount}
           />
         )}
       </div>

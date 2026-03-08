@@ -38,12 +38,12 @@ export async function GET(
 
   const sessionsSnapshot = await query.get();
 
-  const sessions = sessionsSnapshot.docs.map((doc) => ({
+  const completions = sessionsSnapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
     sessionAt: doc.data().sessionAt?.toDate?.() || doc.data().sessionAt,
     createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
   }));
 
-  return NextResponse.json({ sessions });
+  return NextResponse.json({ completions });
 }
