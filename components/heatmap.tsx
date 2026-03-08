@@ -21,8 +21,10 @@ function getColor(value: number, max: number, dark: boolean): string {
 
 export function Heatmap({ data, year }: HeatmapProps) {
   const [dark, setDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const root = document.documentElement;
     setDark(root.classList.contains("dark"));
     const observer = new MutationObserver(() => {
@@ -39,8 +41,8 @@ export function Heatmap({ data, year }: HeatmapProps) {
     const start = new Date(startDate);
     start.setDate(start.getDate() - start.getDay());
 
-    const weeksArr: { date: Date; value: number }[][] = [];
-    let currentWeek: { date: Date; value: number }[] = [];
+    const weeksArr: { dateStr: string; value: number }[][] = [];
+    let currentWeek: { dateStr: string; value: number }[] = [];
     let maxVal = 0;
     const monthPositions: { month: number; week: number }[] = [];
 
@@ -48,7 +50,7 @@ export function Heatmap({ data, year }: HeatmapProps) {
     let weekIndex = 0;
 
     while (current <= endDate || currentWeek.length > 0) {
-      const dateStr = current.toISOString().split("T")[0];
+      const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
       const value = data[dateStr] || 0;
       if (value > maxVal) maxVal = value;
 
@@ -56,7 +58,7 @@ export function Heatmap({ data, year }: HeatmapProps) {
         monthPositions.push({ month: current.getMonth(), week: weekIndex });
       }
 
-      currentWeek.push({ date: new Date(current), value });
+      currentWeek.push({ dateStr, value });
 
       if (current.getDay() === 6) {
         weeksArr.push(currentWeek);
@@ -80,6 +82,10 @@ export function Heatmap({ data, year }: HeatmapProps) {
 
   const svgWidth = labelWidth + weeks.length * (cellSize + gap);
   const svgHeight = headerHeight + 7 * (cellSize + gap) + 20;
+
+  if (!mounted) {
+    return <div style={{ height: svgHeight }} />;
+  }
 
   return (
     <div>
@@ -109,7 +115,7 @@ export function Heatmap({ data, year }: HeatmapProps) {
               rx={2}
               fill={getColor(day.value, max, dark)}
             >
-              <title>{day.date.toISOString().split("T")[0]}: {day.value.toLocaleString()} tokens</title>
+              <title>{day.dateStr}: {day.value.toLocaleString("en-US")} tokens</title>
             </rect>
           ))
         )}
