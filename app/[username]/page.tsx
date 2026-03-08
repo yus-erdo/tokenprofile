@@ -1,19 +1,19 @@
 import { adminDb } from "@/lib/firebase/admin";
 import { notFound } from "next/navigation";
 import { ProfileContent, type Session } from "@/components/profile-content";
-import { EditProfileButton } from "@/components/edit-profile-button";
+import { ProfileSidebar } from "@/components/profile-sidebar";
 import { ProfileTabs } from "@/components/profile-tabs";
-import { SignOutButton } from "@/components/sign-out-button";
+import { DeveloperTab } from "@/components/developer-tab";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 interface Props {
   params: Promise<{ username: string }>;
-  searchParams: Promise<{ year?: string }>;
+  searchParams: Promise<{ year?: string; tab?: string }>;
 }
 
 export default async function ProfilePage({ params, searchParams }: Props) {
   const { username } = await params;
-  const { year: yearParam } = await searchParams;
+  const { year: yearParam, tab } = await searchParams;
   const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
 
   // Fetch user by username
@@ -77,6 +77,16 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const memberSince = user.createdAt?.toDate?.()?.getFullYear() || currentYear;
   const years = Array.from({ length: currentYear - memberSince + 1 }, (_, i) => currentYear - i);
 
+  const initialUser = {
+    displayName: user.displayName || "",
+    bio: user.bio || "",
+    location: user.location || "",
+    website: user.website || "",
+    avatarUrl: user.avatarUrl || "",
+  };
+
+  const isDeveloperTab = tab === "developer";
+
   return (
     <div className="max-w-6xl mx-auto px-4">
       {/* GitHub-style header — border line that avatar overlaps */}
@@ -107,62 +117,25 @@ export default async function ProfilePage({ params, searchParams }: Props) {
       {/* Two-column layout */}
       <div className="flex flex-col md:flex-row gap-8 pt-4">
         {/* Sidebar */}
-        <div className="w-full md:w-56 flex-shrink-0">
-          {/* Mobile avatar + name row */}
-          <div className="flex flex-row items-center gap-4 md:hidden">
-            {user.avatarUrl && (
-              <img
-                src={user.avatarUrl}
-                alt={user.displayName || user.username}
-                className="w-20 h-20 rounded-full border border-gray-200 dark:border-gray-700 flex-shrink-0"
-              />
-            )}
-            <div className="min-w-0">
-              <h1 className="text-xl font-bold">{user.displayName || user.username}</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-base">{user.username}</p>
-            </div>
-          </div>
-          {/* Desktop name — below avatar overlap area */}
-          <div className="hidden md:block md:mt-[152px]">
-            <h1 className="text-2xl font-bold">{user.displayName || user.username}</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-xl font-light">{user.username}</p>
-          </div>
+        <ProfileSidebar username={username} initialUser={initialUser} />
 
-          {user.bio && <p className="mt-3 text-gray-700 dark:text-gray-300 text-sm md:text-base">{user.bio}</p>}
-
-          <EditProfileButton username={username} />
-
-          <div className="mt-3 space-y-1 text-sm text-gray-600 dark:text-gray-400">
-            {user.location && (
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                <span>{user.location}</span>
-              </div>
-            )}
-            {user.website && (
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101" /></svg>
-                <a href={user.website.startsWith("http") ? user.website : `https://${user.website}`} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 hover:underline truncate">{user.website.replace(/^https?:\/\//, "")}</a>
-              </div>
-            )}
-          </div>
-
-          <SignOutButton username={username} />
-        </div>
-
-        {/* Main content — real-time updates via client component */}
-        <ProfileContent
-          userId={userDoc.id}
-          username={username}
-          year={year}
-          years={years}
-          initialSessions={sessions}
-          initialHeatmapData={heatmapData}
-          initialTotalTokens={totalTokens}
-          initialTotalCost={totalCost}
-          initialFavoriteModel={favoriteModel}
-          initialSessionCount={sessionCount}
-        />
+        {/* Main content */}
+        {isDeveloperTab ? (
+          <DeveloperTab />
+        ) : (
+          <ProfileContent
+            userId={userDoc.id}
+            username={username}
+            year={year}
+            years={years}
+            initialSessions={sessions}
+            initialHeatmapData={heatmapData}
+            initialTotalTokens={totalTokens}
+            initialTotalCost={totalCost}
+            initialFavoriteModel={favoriteModel}
+            initialSessionCount={sessionCount}
+          />
+        )}
       </div>
     </div>
   );
