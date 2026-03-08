@@ -8,6 +8,8 @@ interface UserProfile {
   username: string;
   displayName: string;
   bio: string;
+  location: string;
+  website: string;
   avatarUrl: string;
   apiKey: string;
 }
@@ -49,6 +51,8 @@ export default function SettingsPage() {
       body: JSON.stringify({
         displayName: profile.displayName,
         bio: profile.bio,
+        location: profile.location,
+        website: profile.website,
       }),
     });
     if (res.ok) setMessage("Profile updated!");
@@ -106,6 +110,26 @@ export default function SettingsPage() {
               value={profile.bio || ""}
               onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
               rows={3}
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+            <input
+              type="text"
+              value={profile.location || ""}
+              onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+              placeholder="e.g. London, UK"
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website</label>
+            <input
+              type="text"
+              value={profile.website || ""}
+              onChange={(e) => setProfile({ ...profile, website: e.target.value })}
+              placeholder="e.g. https://example.com"
               className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-900"
             />
           </div>

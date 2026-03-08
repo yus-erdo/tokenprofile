@@ -1,7 +1,7 @@
 "use client";
 
 import { GithubAuthProvider, signInWithPopup } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/client";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/firebase/auth-context";
@@ -27,9 +27,31 @@ export default function SignInPage() {
 
   async function signInWithGitHub() {
     const provider = new GithubAuthProvider();
+    provider.addScope("read:user");
     try {
       const result = await signInWithPopup(auth, provider);
       const firebaseUser = result.user;
+
+      // Get GitHub access token to fetch extra profile data (location, blog)
+      const credential = GithubAuthProvider.credentialFromResult(result);
+      const githubToken = credential?.accessToken;
+
+      let githubLocation = "";
+      let githubBlog = "";
+      if (githubToken) {
+        try {
+          const ghRes = await fetch("https://api.github.com/user", {
+            headers: { Authorization: `Bearer ${githubToken}` },
+          });
+          if (ghRes.ok) {
+            const ghData = await ghRes.json();
+            githubLocation = ghData.location || "";
+            githubBlog = ghData.blog || "";
+          }
+        } catch {
+          // Non-critical — continue without GitHub profile extras
+        }
+      }
 
       // Check if user doc exists, create if not
       const userRef = doc(db, "users", firebaseUser.uid);
@@ -48,14 +70,22 @@ export default function SignInPage() {
           displayName: firebaseUser.displayName || "",
           bio: "",
           avatarUrl: firebaseUser.photoURL || "",
+          location: githubLocation,
+          website: githubBlog,
           apiKey: crypto.randomUUID() + crypto.randomUUID().replace(/-/g, ""),
           createdAt: new Date(),
         });
       }
 
-      // Existing user -> profile, new user -> settings
+      // For existing users, backfill location/website from GitHub if empty
       if (userSnap.exists()) {
         const existingData = userSnap.data();
+        const updates: Record<string, string> = {};
+        if (!existingData.location && githubLocation) updates.location = githubLocation;
+        if (!existingData.website && githubBlog) updates.website = githubBlog;
+        if (Object.keys(updates).length > 0) {
+          await updateDoc(userRef, updates);
+        }
         router.push(`/${existingData.username}`);
       } else {
         router.push("/settings");

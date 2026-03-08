@@ -23,7 +23,7 @@ export async function PATCH(request: Request) {
   if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const allowed = ["displayName", "bio"];
+  const allowed = ["displayName", "bio", "location", "website"];
   const updates: Record<string, string> = {};
   for (const key of allowed) {
     if (key in body) updates[key] = body[key];
