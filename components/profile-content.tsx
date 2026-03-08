@@ -257,7 +257,7 @@ export function ProfileContent({
             <div className="flex items-center gap-4 text-gray-500 dark:text-gray-400 shrink-0">
               <span>{(s.totalTokens || 0).toLocaleString()} tokens</span>
               <span>${Number(s.costUsd || 0).toFixed(4)}</span>
-              <span>{new Date(s.timestamp).toLocaleDateString()}</span>
+              <span>{new Date(s.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
             </div>
           </div>
         ))}
