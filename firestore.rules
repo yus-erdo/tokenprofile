@@ -9,5 +9,8 @@ service cloud.firestore {
     match /events/{eventId} {
       allow read: if true;
     }
+    match /config/{docId} {
+      allow read: if true;
+    }
   }
 }

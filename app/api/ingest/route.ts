@@ -1,4 +1,5 @@
 import { adminDb } from "@/lib/firebase/admin";
+import { getModelCosts, calculateCost } from "@/lib/firebase/model-costs";
 import { rateLimiter } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
@@ -35,15 +36,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  const model = (body.model as string) || null;
+  const inputTokens = Number(body.input_tokens) || 0;
+  const outputTokens = Number(body.output_tokens) || 0;
+  const cacheCreationTokens = Number(body.cache_creation_tokens) || 0;
+  const cacheReadTokens = Number(body.cache_read_tokens) || 0;
+  const totalTokens = Number(body.total_tokens) || 0;
+
+  // Calculate cost server-side
+  let costUsd = 0;
+  if (model) {
+    const config = await getModelCosts();
+    const calculated = calculateCost({
+      model,
+      inputTokens,
+      outputTokens,
+      cacheCreationTokens,
+      cacheReadTokens,
+      config,
+    });
+    costUsd = calculated ?? (Number(body.cost_usd) || 0);
+  } else {
+    costUsd = Number(body.cost_usd) || 0;
+  }
+
   await adminDb.collection("events").add({
     userId: userDoc.id,
     event: body.event || "Stop",
     provider: body.provider || null,
-    model: body.model || null,
-    inputTokens: body.input_tokens || 0,
-    outputTokens: body.output_tokens || 0,
-    totalTokens: body.total_tokens || 0,
-    costUsd: body.cost_usd || 0,
+    model,
+    inputTokens,
+    outputTokens,
+    cacheCreationTokens,
+    cacheReadTokens,
+    totalTokens,
+    costUsd,
     project: body.project || null,
     durationSeconds: body.duration_seconds || null,
     numTurns: body.num_turns || null,

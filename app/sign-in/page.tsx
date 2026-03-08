@@ -57,13 +57,14 @@ export default function SignInPage() {
       const userRef = doc(db, "users", firebaseUser.uid);
       const userSnap = await getDoc(userRef);
 
+      // Get GitHub username from provider data
+      const githubUsername =
+        firebaseUser.providerData[0]?.displayName ||
+        firebaseUser.displayName ||
+        firebaseUser.email?.split("@")[0] ||
+        firebaseUser.uid;
+
       if (!userSnap.exists()) {
-        // Get GitHub username from provider data
-        const githubUsername =
-          firebaseUser.providerData[0]?.displayName ||
-          firebaseUser.displayName ||
-          firebaseUser.email?.split("@")[0] ||
-          firebaseUser.uid;
 
         await setDoc(userRef, {
           username: githubUsername.toLowerCase().replace(/\s+/g, "-"),
@@ -74,6 +75,8 @@ export default function SignInPage() {
           website: githubBlog,
           apiKey: crypto.randomUUID() + crypto.randomUUID().replace(/-/g, ""),
           createdAt: new Date(),
+          hasOnboarded: false,
+          interests: [],
         });
       }
 
@@ -88,7 +91,8 @@ export default function SignInPage() {
         }
         router.push(`/${existingData.username}`);
       } else {
-        router.push("/settings");
+        const newUsername = githubUsername.toLowerCase().replace(/\s+/g, "-");
+        router.push(`/${newUsername}`);
       }
     } catch (error) {
       console.error("Sign in failed:", error);
