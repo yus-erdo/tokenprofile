@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.2.1",
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@types/react-dom": "^19.2.3",
     "eslint": "^10.0.2",
-    "eslint-config-next": "^16.1.6"
+    "eslint-config-next": "^16.1.6",
+    "vitest": "^4.0.18"
   }
 }
