@@ -3,8 +3,9 @@
 # Posts completion token usage to Token Profile API on Stop event
 #
 # Env vars:
-#   TOKEN_PROFILE_API_KEY - required, get from tokenprofile.app/settings
-#   TOKEN_PROFILE_URL     - optional, defaults to https://www.tokenprofile.app
+#   TOKEN_PROFILE_API_KEY   - required, get from tokenprofile.app/settings
+#   TOKEN_PROFILE_URL       - optional, defaults to https://www.tokenprofile.app
+#   TOKEN_PROFILE_DEBUG     - set to 1 to log raw input, parsed stats, payload, and server response to /tmp/tokenprofile-debug/
 
 # Try loading env var from shell config if not already set
 if [ -z "$TOKEN_PROFILE_API_KEY" ]; then
@@ -19,7 +20,21 @@ if [ -z "$TOKEN_PROFILE_API_KEY" ]; then exit 0; fi
 
 TOKEN_PROFILE_URL="${TOKEN_PROFILE_URL:-https://tokenprofile.app}"
 
+DEBUG="${TOKEN_PROFILE_DEBUG:-0}"
+DEBUG_DIR="/tmp/tokenprofile-debug"
+
+if [ "$DEBUG" = "1" ]; then
+  mkdir -p "$DEBUG_DIR"
+  LOG="$DEBUG_DIR/$(date +%Y%m%d-%H%M%S).log"
+  debug_log() { echo "[$(date +%H:%M:%S)] $*" >> "$LOG"; }
+  debug_json() { echo "[$(date +%H:%M:%S)] $1:" >> "$LOG"; echo "$2" >> "$LOG"; }
+else
+  debug_log() { :; }
+  debug_json() { :; }
+fi
+
 INPUT=$(cat)
+debug_json "CC stdin" "$INPUT"
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty')
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 PROJECT=$(basename "$CWD" 2>/dev/null || echo "unknown")
@@ -40,6 +55,7 @@ STATS=$(jq -s '
 ' "$TRANSCRIPT_PATH" 2>/dev/null)
 
 [ -z "$STATS" ] && exit 0
+debug_json "Parsed stats" "$STATS"
 
 TOTAL_INPUT=$(echo "$STATS" | jq '.input_tokens + .cache_creation + .cache_read')
 TOTAL_OUTPUT=$(echo "$STATS" | jq '.output_tokens')
@@ -48,6 +64,7 @@ TOTAL_TOKENS=$((TOTAL_INPUT + TOTAL_OUTPUT))
 
 MODEL=$(echo "$STATS" | jq -r '.model')
 NUM_TURNS=$(echo "$STATS" | jq '.num_turns')
+debug_log "input=$TOTAL_INPUT output=$TOTAL_OUTPUT total=$TOTAL_TOKENS model=$MODEL turns=$NUM_TURNS"
 
 PAYLOAD=$(jq -n \
   --arg event "Stop" \
@@ -59,10 +76,24 @@ PAYLOAD=$(jq -n \
   --arg project "$PROJECT" \
   --argjson num_turns "$NUM_TURNS" \
   '{event:$event,provider:$provider,model:$model,input_tokens:$input_tokens,output_tokens:$output_tokens,total_tokens:$total_tokens,project:$project,num_turns:$num_turns}')
+debug_json "Payload" "$PAYLOAD"
 
-curl -s --max-time 10 -X POST "$TOKEN_PROFILE_URL/api/ingest" \
-  -H "Authorization: Bearer $TOKEN_PROFILE_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d "$PAYLOAD" > /dev/null 2>&1
+if [ "$DEBUG" = "1" ]; then
+  RESPONSE=$(curl -s --max-time 10 -w "\n%{http_code}" -X POST "$TOKEN_PROFILE_URL/api/ingest" \
+    -H "Authorization: Bearer $TOKEN_PROFILE_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "$PAYLOAD")
+  HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+  BODY=$(echo "$RESPONSE" | sed '$d')
+  debug_log "HTTP status: $HTTP_CODE"
+  debug_json "Server response" "$BODY"
+  debug_log "Debug log: $LOG"
+  echo "tokenprofile: debug log at $LOG" >&2
+else
+  curl -s --max-time 10 -X POST "$TOKEN_PROFILE_URL/api/ingest" \
+    -H "Authorization: Bearer $TOKEN_PROFILE_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "$PAYLOAD" > /dev/null 2>&1
+fi
 
 exit 0
