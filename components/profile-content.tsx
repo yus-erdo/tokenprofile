@@ -28,7 +28,7 @@ interface ProfileContentProps {
   year: number;
   years: number[];
   initialCompletions: Completion[];
-  initialHeatmapData: Record<string, number>;
+  initialHeatmapData: Record<string, { tokens: number; completions: number }>;
   initialTotalTokens: number;
   initialTotalCost: number;
   initialFavoriteModel: string;
@@ -36,14 +36,18 @@ interface ProfileContentProps {
 }
 
 function computeStats(completions: Completion[]) {
-  const heatmapData: Record<string, number> = {};
+  const heatmapData: Record<string, { tokens: number; completions: number }> = {};
   let totalTokens = 0;
   let totalCost = 0;
   const modelCounts: Record<string, number> = {};
 
   for (const s of completions) {
     const date = s.timestamp.split("T")[0] || "";
-    heatmapData[date] = (heatmapData[date] || 0) + (s.totalTokens || 0);
+    const existing = heatmapData[date];
+    heatmapData[date] = {
+      tokens: (existing?.tokens ?? 0) + (s.totalTokens || 0),
+      completions: (existing?.completions ?? 0) + 1,
+    };
     totalTokens += s.totalTokens || 0;
     totalCost += Number(s.costUsd || 0);
     if (s.model) modelCounts[s.model] = (modelCounts[s.model] || 0) + 1;
