@@ -219,10 +219,11 @@ function InstallSection({ apiKey, firestoreId }: { apiKey: string; firestoreId: 
 function HookVerification({ firestoreId }: { firestoreId: string }) {
   const [verified, setVerified] = useState(false);
   const [eventInfo, setEventInfo] = useState<{ model: string; totalTokens: number } | null>(null);
+  const [since] = useState(() => new Date().toISOString());
 
   const poll = useCallback(async () => {
     try {
-      const res = await fetch("/api/users/me/latest-event");
+      const res = await fetch(`/api/users/me/latest-event?since=${encodeURIComponent(since)}`);
       if (!res.ok) return;
       const data = await res.json();
       if (data.event) {
@@ -232,7 +233,7 @@ function HookVerification({ firestoreId }: { firestoreId: string }) {
     } catch {
       // ignore polling errors
     }
-  }, []);
+  }, [since]);
 
   useEffect(() => {
     poll();

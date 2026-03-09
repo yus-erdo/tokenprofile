@@ -382,10 +382,11 @@ function StepInstallHook({ apiKey, userId, onContinue }: { apiKey: string; userI
 function HookVerification({ userId }: { userId: string }) {
   const [verified, setVerified] = useState(false);
   const [eventInfo, setEventInfo] = useState<{ model: string; totalTokens: number } | null>(null);
+  const [since] = useState(() => new Date().toISOString());
 
   const poll = useCallback(async () => {
     try {
-      const res = await fetch("/api/users/me/latest-event");
+      const res = await fetch(`/api/users/me/latest-event?since=${encodeURIComponent(since)}`);
       if (!res.ok) return;
       const data = await res.json();
       if (data.event) {
@@ -395,7 +396,7 @@ function HookVerification({ userId }: { userId: string }) {
     } catch {
       // ignore polling errors
     }
-  }, []);
+  }, [since]);
 
   useEffect(() => {
     poll();
