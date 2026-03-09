@@ -57,7 +57,7 @@ export function ProfileContent({
           <div className="text-sm text-gray-500 dark:text-gray-400">Completions</div>
         </div>
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-          <div className="text-2xl font-bold" style={STAT_BASE_STYLE}>{(totalTokens / 1_000_000).toFixed(1)}M</div>
+          <div className="text-2xl font-bold" style={STAT_BASE_STYLE}>{totalTokens >= 1_000_000 ? `${(totalTokens / 1_000_000).toFixed(1)}M` : totalTokens >= 1_000 ? `${(totalTokens / 1_000).toFixed(1)}K` : totalTokens}</div>
           <div className="text-sm text-gray-500 dark:text-gray-400">Tokens</div>
         </div>
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
