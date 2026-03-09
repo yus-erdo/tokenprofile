@@ -1,10 +1,7 @@
 "use client";
 
-import { useAuth } from "@/lib/firebase/auth-context";
-import { signOut } from "firebase/auth";
-import { auth, db } from "@/lib/firebase/client";
-import { doc, getDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface InitialUser {
@@ -21,22 +18,13 @@ interface ProfileSidebarProps {
 }
 
 export function ProfileSidebar({ username, initialUser }: ProfileSidebarProps) {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const router = useRouter();
-  const [isOwner, setIsOwner] = useState(false);
+  const isOwner = session?.user?.username === username;
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState(initialUser);
   const [editForm, setEditForm] = useState(initialUser);
-
-  useEffect(() => {
-    if (!user) return;
-    getDoc(doc(db, "users", user.uid)).then((snap) => {
-      if (snap.exists() && snap.data().username === username) {
-        setIsOwner(true);
-      }
-    });
-  }, [user, username]);
 
   function handleEdit() {
     setEditForm(profile);
@@ -49,15 +37,10 @@ export function ProfileSidebar({ username, initialUser }: ProfileSidebarProps) {
   }
 
   async function handleSave() {
-    if (!user) return;
     setSaving(true);
-    const token = await user.getIdToken();
     const res = await fetch("/api/users/me", {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         displayName: editForm.displayName,
         bio: editForm.bio,
@@ -200,7 +183,7 @@ export function ProfileSidebar({ username, initialUser }: ProfileSidebarProps) {
 
       {isOwner && (
         <button
-          onClick={() => signOut(auth).then(() => router.push("/"))}
+          onClick={() => signOut({ callbackUrl: "/" })}
           className="mt-4 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-500 hover:underline transition-colors cursor-pointer"
         >
           Sign out

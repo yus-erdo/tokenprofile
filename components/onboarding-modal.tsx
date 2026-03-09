@@ -1,17 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/firebase/auth-context";
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
-import { type User } from "firebase/auth";
+import { useState, useEffect, useCallback } from "react";
 
 interface OnboardingModalProps {
   apiKey: string;
@@ -22,7 +11,6 @@ interface OnboardingModalProps {
 const STEP_LABELS = ["Interests", "Setup", "Ready"];
 
 export function OnboardingModal({ apiKey, userId, onComplete }: OnboardingModalProps) {
-  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [mounted, setMounted] = useState(false);
 
@@ -31,14 +19,9 @@ export function OnboardingModal({ apiKey, userId, onComplete }: OnboardingModalP
   }, []);
 
   async function handleComplete() {
-    if (!user) return;
-    const token = await user.getIdToken();
     await fetch("/api/users/me", {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ hasOnboarded: true }),
     });
     onComplete();
@@ -129,7 +112,7 @@ export function OnboardingModal({ apiKey, userId, onComplete }: OnboardingModalP
 
           {/* Step content */}
           <div key={step} className="animate-fade-in px-7 pb-7">
-            {step === 1 && <StepInterests onContinue={nextStep} user={user} />}
+            {step === 1 && <StepInterests onContinue={nextStep} />}
             {step === 2 && <StepInstallHook apiKey={apiKey} userId={userId} onContinue={nextStep} />}
             {step === 3 && <StepDone onComplete={handleComplete} />}
           </div>
@@ -170,7 +153,7 @@ function InterestIcon({ type, className }: { type: string; className?: string })
   }
 }
 
-function StepInterests({ onContinue, user }: { onContinue: () => void; user: User | null }) {
+function StepInterests({ onContinue }: { onContinue: () => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -183,16 +166,11 @@ function StepInterests({ onContinue, user }: { onContinue: () => void; user: Use
   }
 
   async function handleContinue() {
-    if (!user) { onContinue(); return; }
     setSaving(true);
     try {
-      const token = await user.getIdToken();
       await fetch("/api/users/me", {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ interests: selected }),
       });
     } catch {
@@ -386,7 +364,7 @@ function StepInstallHook({ apiKey, userId, onContinue }: { apiKey: string; userI
         )}
       </div>
 
-      {/* Real-time verification */}
+      {/* Polling-based verification */}
       <HookVerification userId={userId} />
 
       <button
@@ -399,33 +377,31 @@ function StepInstallHook({ apiKey, userId, onContinue }: { apiKey: string; userI
   );
 }
 
-// --- Hook Verification ---
+// --- Hook Verification (polling) ---
 
 function HookVerification({ userId }: { userId: string }) {
   const [verified, setVerified] = useState(false);
   const [eventInfo, setEventInfo] = useState<{ model: string; totalTokens: number } | null>(null);
 
-  useEffect(() => {
-    const q = query(
-      collection(db, "events"),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc"),
-      limit(1)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        const data = snapshot.docs[0].data();
+  const poll = useCallback(async () => {
+    try {
+      const res = await fetch("/api/users/me/latest-event");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.event) {
         setVerified(true);
-        setEventInfo({
-          model: data.model || "unknown",
-          totalTokens: data.totalTokens || 0,
-        });
+        setEventInfo(data.event);
       }
-    });
+    } catch {
+      // ignore polling errors
+    }
+  }, []);
 
-    return unsubscribe;
-  }, [userId]);
+  useEffect(() => {
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [poll]);
 
   return (
     <div className={`rounded-xl border p-3.5 transition-all duration-500 ${

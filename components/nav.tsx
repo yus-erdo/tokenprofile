@@ -1,23 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@/lib/firebase/auth-context";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { ThemeToggle } from "./theme-toggle";
 
 export function Nav() {
-  const { user } = useAuth();
-  const [username, setUsername] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      getDoc(doc(db, "users", user.uid)).then((snap) => {
-        if (snap.exists()) setUsername(snap.data().username);
-      });
-    }
-  }, [user]);
+  const { data: session } = useSession();
+  const username = session?.user?.username;
 
   return (
     <nav className="border-b border-gray-200 dark:border-gray-800">
@@ -25,7 +14,7 @@ export function Nav() {
         <Link href={username ? `/${username}` : "/"} className="text-lg font-bold">Token Profile</Link>
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          {user ? (
+          {session ? (
             <>
               {username && (
                 <Link href={`/${username}`} className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">Profile</Link>

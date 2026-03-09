@@ -1,45 +1,28 @@
 "use client";
 
-import { useAuth } from "@/lib/firebase/auth-context";
-import { useEffect, useState } from "react";
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { useSession } from "next-auth/react";
+import { useEffect, useState, useCallback } from "react";
 
 interface DeveloperData {
   apiKey: string;
 }
 
 export function DeveloperTab() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [data, setData] = useState<DeveloperData | null>(null);
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!user) return;
-    user.getIdToken().then((token) => {
-      fetch("/api/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((r) => r.json())
-        .then((d) => setData({ apiKey: d.apiKey }));
-    });
-  }, [user]);
+    if (!session) return;
+    fetch("/api/users/me")
+      .then((r) => r.json())
+      .then((d) => setData({ apiKey: d.apiKey }));
+  }, [session]);
 
   async function handleRegenerateKey() {
-    if (!user || !confirm("Regenerate API key? Your existing hooks will stop working.")) return;
-    const token = await user.getIdToken();
-    const res = await fetch("/api/users/me/regenerate-key", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    if (!confirm("Regenerate API key? Your existing hooks will stop working.")) return;
+    const res = await fetch("/api/users/me/regenerate-key", { method: "POST" });
     const result = await res.json();
     if (result.apiKey && data) {
       setData({ ...data, apiKey: result.apiKey });
@@ -82,7 +65,7 @@ export function DeveloperTab() {
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
           Connect Claude Code to start tracking your usage automatically.
         </p>
-        <InstallSection apiKey={data.apiKey} userId={user!.uid} />
+        <InstallSection apiKey={data.apiKey} firestoreId={session!.user.firestoreId} />
       </section>
     </div>
   );
@@ -90,7 +73,7 @@ export function DeveloperTab() {
 
 // --- Installation Section ---
 
-function InstallSection({ apiKey, userId }: { apiKey: string; userId: string }) {
+function InstallSection({ apiKey, firestoreId }: { apiKey: string; firestoreId: string }) {
   const [tab, setTab] = useState<"automatic" | "manual">("automatic");
   const [copiedCommand, setCopiedCommand] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
@@ -225,39 +208,37 @@ function InstallSection({ apiKey, userId }: { apiKey: string; userId: string }) 
         )}
       </div>
 
-      {/* Real-time verification */}
-      <HookVerification userId={userId} />
+      {/* Polling-based verification */}
+      <HookVerification firestoreId={firestoreId} />
     </div>
   );
 }
 
-// --- Hook Verification ---
+// --- Hook Verification (polling) ---
 
-function HookVerification({ userId }: { userId: string }) {
+function HookVerification({ firestoreId }: { firestoreId: string }) {
   const [verified, setVerified] = useState(false);
   const [eventInfo, setEventInfo] = useState<{ model: string; totalTokens: number } | null>(null);
 
-  useEffect(() => {
-    const q = query(
-      collection(db, "events"),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc"),
-      limit(1)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        const data = snapshot.docs[0].data();
+  const poll = useCallback(async () => {
+    try {
+      const res = await fetch("/api/users/me/latest-event");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.event) {
         setVerified(true);
-        setEventInfo({
-          model: data.model || "unknown",
-          totalTokens: data.totalTokens || 0,
-        });
+        setEventInfo(data.event);
       }
-    });
+    } catch {
+      // ignore polling errors
+    }
+  }, []);
 
-    return unsubscribe;
-  }, [userId]);
+  useEffect(() => {
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [poll]);
 
   return (
     <div className={`rounded-xl border p-3.5 transition-all duration-500 ${

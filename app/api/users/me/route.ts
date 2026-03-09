@@ -1,12 +1,14 @@
+import { auth } from "@/auth";
 import { adminDb } from "@/lib/firebase/admin";
-import { verifyAuth } from "@/lib/firebase/verify-auth";
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
-  const uid = await verifyAuth(request);
-  if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.firestoreId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const userDoc = await adminDb.collection("users").doc(uid).get();
+  const userDoc = await adminDb.collection("users").doc(session.user.firestoreId).get();
   if (!userDoc.exists) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -19,8 +21,10 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const uid = await verifyAuth(request);
-  if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await auth();
+  if (!session?.user?.firestoreId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body = await request.json();
   const allowed = ["displayName", "bio", "location", "website", "hasOnboarded", "interests"];
@@ -29,8 +33,8 @@ export async function PATCH(request: Request) {
     if (key in body) updates[key] = body[key];
   }
 
-  await adminDb.collection("users").doc(uid).update(updates);
+  await adminDb.collection("users").doc(session.user.firestoreId).update(updates);
 
-  const updated = await adminDb.collection("users").doc(uid).get();
+  const updated = await adminDb.collection("users").doc(session.user.firestoreId).get();
   return NextResponse.json(updated.data());
 }

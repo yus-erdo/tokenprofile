@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AuthProvider } from "@/lib/firebase/auth-context";
+import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -24,9 +24,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
         <ThemeProvider>
-          <AuthProvider>
+          <SessionProvider>
             {children}
-          </AuthProvider>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

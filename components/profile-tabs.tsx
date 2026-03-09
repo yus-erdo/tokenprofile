@@ -2,30 +2,18 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/firebase/auth-context";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 interface ProfileTabsProps {
   username: string;
 }
 
 export function ProfileTabs({ username }: ProfileTabsProps) {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
   const year = searchParams.get("year");
-  const [isOwner, setIsOwner] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    getDoc(doc(db, "users", user.uid)).then((snap) => {
-      if (snap.exists() && snap.data().username === username) {
-        setIsOwner(true);
-      }
-    });
-  }, [user, username]);
+  const isOwner = session?.user?.username === username;
 
   const overviewHref = year ? `/${username}?year=${year}` : `/${username}`;
   const developerHref = year ? `/${username}?tab=developer&year=${year}` : `/${username}?tab=developer`;

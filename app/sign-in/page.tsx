@@ -1,103 +1,18 @@
 "use client";
 
-import { GithubAuthProvider, signInWithPopup } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase/client";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/firebase/auth-context";
 import { useEffect } from "react";
 
 export default function SignInPage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading && user) {
-      // Redirect existing users to their profile
-      const userRef = doc(db, "users", user.uid);
-      getDoc(userRef).then((snap) => {
-        if (snap.exists()) {
-          router.push(`/${snap.data().username}`);
-        } else {
-          router.push("/settings");
-        }
-      });
+    if (status === "authenticated" && session?.user?.username) {
+      router.push(`/${session.user.username}`);
     }
-  }, [user, loading, router]);
-
-  async function signInWithGitHub() {
-    const provider = new GithubAuthProvider();
-    provider.addScope("read:user");
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const firebaseUser = result.user;
-
-      // Get GitHub access token to fetch extra profile data (location, blog)
-      const credential = GithubAuthProvider.credentialFromResult(result);
-      const githubToken = credential?.accessToken;
-
-      let githubLocation = "";
-      let githubBlog = "";
-      if (githubToken) {
-        try {
-          const ghRes = await fetch("https://api.github.com/user", {
-            headers: { Authorization: `Bearer ${githubToken}` },
-          });
-          if (ghRes.ok) {
-            const ghData = await ghRes.json();
-            githubLocation = ghData.location || "";
-            githubBlog = ghData.blog || "";
-          }
-        } catch {
-          // Non-critical — continue without GitHub profile extras
-        }
-      }
-
-      // Check if user doc exists, create if not
-      const userRef = doc(db, "users", firebaseUser.uid);
-      const userSnap = await getDoc(userRef);
-
-      // Get GitHub username from provider data
-      const githubUsername =
-        firebaseUser.providerData[0]?.displayName ||
-        firebaseUser.displayName ||
-        firebaseUser.email?.split("@")[0] ||
-        firebaseUser.uid;
-
-      if (!userSnap.exists()) {
-
-        await setDoc(userRef, {
-          username: githubUsername.toLowerCase().replace(/\s+/g, "-"),
-          displayName: firebaseUser.displayName || "",
-          bio: "",
-          avatarUrl: firebaseUser.photoURL || "",
-          location: githubLocation,
-          website: githubBlog,
-          apiKey: crypto.randomUUID() + crypto.randomUUID().replace(/-/g, ""),
-          createdAt: new Date(),
-          hasOnboarded: false,
-          interests: [],
-        });
-      }
-
-      // For existing users, backfill location/website from GitHub if empty
-      if (userSnap.exists()) {
-        const existingData = userSnap.data();
-        const updates: Record<string, string> = {};
-        if (!existingData.location && githubLocation) updates.location = githubLocation;
-        if (!existingData.website && githubBlog) updates.website = githubBlog;
-        if (Object.keys(updates).length > 0) {
-          await updateDoc(userRef, updates);
-        }
-        router.push(`/${existingData.username}`);
-      } else {
-        const newUsername = githubUsername.toLowerCase().replace(/\s+/g, "-");
-        router.push(`/${newUsername}`);
-      }
-    } catch (error) {
-      console.error("Sign in failed:", error);
-    }
-  }
+  }, [session, status, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -105,7 +20,7 @@ export default function SignInPage() {
         <h1 className="text-3xl font-bold">Sign in to Token Profile</h1>
         <p className="text-gray-600 dark:text-gray-400">Track your LLM token usage</p>
         <button
-          onClick={signInWithGitHub}
+          onClick={() => signIn("github")}
           className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
