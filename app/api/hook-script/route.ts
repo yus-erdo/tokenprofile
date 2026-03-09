@@ -41,7 +41,7 @@ fi
 if [ -f "$SETTINGS_FILE" ]; then
   # Merge hook into existing settings using jq if available, otherwise warn
   if command -v jq &>/dev/null; then
-    HOOK_ENTRY='{"matcher":"","hooks":[{"type":"command","command":"bash '"$HOOK_SCRIPT"'"}]}'
+    HOOK_ENTRY='{"matcher":"","hooks":[{"type":"command","command":"bash '"$HOOK_SCRIPT"'","async":true}]}'
     UPDATED=$(jq --argjson hook "[$HOOK_ENTRY]" '
       .hooks.Stop = ((.hooks.Stop // []) + $hook | unique_by(.hooks[0].command))
     ' "$SETTINGS_FILE")
@@ -62,7 +62,8 @@ else
         "hooks": [
           {
             "type": "command",
-            "command": "bash $HOOK_SCRIPT"
+            "command": "bash $HOOK_SCRIPT",
+            "async": true
           }
         ]
       }
