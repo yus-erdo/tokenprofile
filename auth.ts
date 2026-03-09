@@ -26,6 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         await userRef.set({
           username,
           displayName: profile.name || "",
+          email: profile.email || "",
           bio: "",
           avatarUrl: profile.avatar_url || "",
           location: (profile as Record<string, unknown>).location as string || "",
@@ -41,6 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const updates: Record<string, string> = {};
         const ghLocation = (profile as Record<string, unknown>).location as string;
         const ghBlog = (profile as Record<string, unknown>).blog as string;
+        if (!data.email && profile.email) updates.email = profile.email;
         if (!data.location && ghLocation) updates.location = ghLocation;
         if (!data.website && ghBlog) updates.website = ghBlog;
         if (Object.keys(updates).length > 0) {
