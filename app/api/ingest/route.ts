@@ -63,6 +63,7 @@ export async function POST(request: Request) {
   await adminDb.collection("events").add({
     userId: userDoc.id,
     event: body.event || "Stop",
+    source: (body.source as string) || "claude-code",
     provider: body.provider || null,
     model,
     inputTokens,
