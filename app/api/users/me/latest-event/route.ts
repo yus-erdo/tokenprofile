@@ -31,10 +31,12 @@ export async function GET(request: Request) {
   }
 
   const data = snapshot.docs[0].data();
+  const createdAt = data.createdAt?.toDate?.()?.toISOString?.() || data.createdAt || null;
   return NextResponse.json({
     event: {
       model: data.model || "unknown",
       totalTokens: data.totalTokens || 0,
+      createdAt,
     },
   });
 }
