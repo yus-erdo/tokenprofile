@@ -1,0 +1,13 @@
+{
+  "event": "Stop",
+  "source": "claude-code",
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-20250514",
+  "input_tokens": 3950,
+  "output_tokens": 800,
+  "total_tokens": 4750,
+  "cache_creation_tokens": 200,
+  "cache_read_tokens": 250,
+  "project": "my-app",
+  "num_turns": 2
+}

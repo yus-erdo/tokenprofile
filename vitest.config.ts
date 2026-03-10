@@ -7,4 +7,8 @@ export default defineConfig({
       "@": path.resolve(__dirname),
     },
   },
+  test: {
+    testTimeout: 15000,
+    include: ["lib/**/__tests__/**/*.test.ts", "test/**/*.test.ts"],
+  },
 });
