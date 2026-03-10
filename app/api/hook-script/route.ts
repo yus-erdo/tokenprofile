@@ -33,7 +33,9 @@ if ! grep -q "TOKEN_PROFILE_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
   printf '\\nexport TOKEN_PROFILE_API_KEY="%s"\\n' "$API_KEY" >> "$SHELL_CONFIG"
   echo "Added API key to $SHELL_CONFIG"
 else
-  echo "TOKEN_PROFILE_API_KEY already set in $SHELL_CONFIG"
+  sed -i.bak 's|export TOKEN_PROFILE_API_KEY="[^"]*"|export TOKEN_PROFILE_API_KEY="'"$API_KEY"'"|' "$SHELL_CONFIG"
+  rm -f "\${SHELL_CONFIG}.bak"
+  echo "Updated API key in $SHELL_CONFIG"
 fi
 
 CONFIGURED=""
@@ -50,15 +52,29 @@ if [ -d "$HOME/.claude" ]; then
   fi
 
   if [ -f "$SETTINGS_FILE" ]; then
-    if command -v jq &>/dev/null; then
+    if grep -q "bash $HOOK_SCRIPT" "$SETTINGS_FILE" 2>/dev/null; then
+      echo "Hook already configured in $SETTINGS_FILE"
+    elif command -v jq &>/dev/null; then
       HOOK_ENTRY='{"matcher":"","hooks":[{"type":"command","command":"bash '"$HOOK_SCRIPT"'","async":true}]}'
       UPDATED=$(jq --argjson hook "[$HOOK_ENTRY]" '
         .hooks.Stop = ((.hooks.Stop // []) + $hook | unique_by(.hooks[0].command))
       ' "$SETTINGS_FILE")
-      echo "$UPDATED" > "$SETTINGS_FILE"
+      TMP_FILE=$(mktemp "$SETTINGS_FILE.XXXXXX")
+      echo "$UPDATED" > "$TMP_FILE" && mv "$TMP_FILE" "$SETTINGS_FILE"
+      echo "Updated $SETTINGS_FILE"
+    elif command -v python3 &>/dev/null; then
+      python3 -c "
+import json, sys
+with open(sys.argv[1]) as f: data = json.load(f)
+hook = {'matcher':'','hooks':[{'type':'command','command':'bash '+sys.argv[2],'async':True}]}
+stops = data.setdefault('hooks',{}).setdefault('Stop',[])
+if not any(h.get('hooks',[{}])[0].get('command','').endswith('hook.sh') for h in stops):
+    stops.append(hook)
+with open(sys.argv[1],'w') as f: json.dump(data, f, indent=2)
+" "$SETTINGS_FILE" "$HOOK_SCRIPT"
       echo "Updated $SETTINGS_FILE"
     else
-      echo "Warning: jq not found. Please manually add the hook to $SETTINGS_FILE"
+      echo "Warning: Neither jq nor python3 found. Please manually add the hook to $SETTINGS_FILE"
     fi
   else
     mkdir -p "$(dirname "$SETTINGS_FILE")"
@@ -90,13 +106,30 @@ if [ -d "$HOME/.cursor" ]; then
   CURSOR_HOOKS="$HOME/.cursor/hooks.json"
   NEW_HOOK='{"command":"/bin/bash","args":["'"$HOOK_SCRIPT"'"]}'
 
-  if [ -f "$CURSOR_HOOKS" ] && command -v jq &>/dev/null; then
-    # Merge into existing hooks.json
-    UPDATED=$(jq --argjson hook "[$NEW_HOOK]" '
-      .hooks.stop = ((.hooks.stop // []) + $hook | unique_by(.args[0]))
-    ' "$CURSOR_HOOKS")
-    echo "$UPDATED" > "$CURSOR_HOOKS"
-    echo "Updated $CURSOR_HOOKS"
+  if [ -f "$CURSOR_HOOKS" ] && grep -q "$HOOK_SCRIPT" "$CURSOR_HOOKS" 2>/dev/null; then
+    echo "Hook already configured in $CURSOR_HOOKS"
+  elif [ -f "$CURSOR_HOOKS" ]; then
+    if command -v jq &>/dev/null; then
+      UPDATED=$(jq --argjson hook "[$NEW_HOOK]" '
+        .hooks.stop = ((.hooks.stop // []) + $hook | unique_by(.args[0]))
+      ' "$CURSOR_HOOKS")
+      TMP_FILE=$(mktemp "$CURSOR_HOOKS.XXXXXX")
+      echo "$UPDATED" > "$TMP_FILE" && mv "$TMP_FILE" "$CURSOR_HOOKS"
+      echo "Updated $CURSOR_HOOKS"
+    elif command -v python3 &>/dev/null; then
+      python3 -c "
+import json, sys
+with open(sys.argv[1]) as f: data = json.load(f)
+hook = {'command':'/bin/bash','args':[sys.argv[2]]}
+stops = data.setdefault('hooks',{}).setdefault('stop',[])
+if not any(sys.argv[2] in h.get('args',[]) for h in stops):
+    stops.append(hook)
+with open(sys.argv[1],'w') as f: json.dump(data, f, indent=2)
+" "$CURSOR_HOOKS" "$HOOK_SCRIPT"
+      echo "Updated $CURSOR_HOOKS"
+    else
+      echo "Warning: Neither jq nor python3 found. Please manually add the hook to $CURSOR_HOOKS"
+    fi
   else
     cat > "$CURSOR_HOOKS" << CURSOR_EOF
 {

@@ -130,14 +130,15 @@ describe("installer", () => {
     }
   });
 
-  it("does not duplicate API key in shell config", async () => {
+  it("updates API key in shell config on re-run", async () => {
     const result = await runInstaller({
       homeFiles: {
-        ".zshrc": 'export TOKEN_PROFILE_API_KEY="existing-key"\n',
+        ".zshrc": 'export TOKEN_PROFILE_API_KEY="old-key"\n',
       },
       homeDirs: [".claude"],
       mockServerPort: port,
       installerScript,
+      apiKey: "new-key-456",
     });
 
     try {
@@ -145,7 +146,9 @@ describe("installer", () => {
       const zshrc = result.readFile(".zshrc")!;
       const matches = zshrc.match(/TOKEN_PROFILE_API_KEY/g);
       expect(matches?.length).toBe(1);
-      expect(result.stdout).toContain("already set");
+      expect(zshrc).toContain('TOKEN_PROFILE_API_KEY="new-key-456"');
+      expect(zshrc).not.toContain("old-key");
+      expect(result.stdout).toContain("Updated API key");
     } finally {
       result.cleanup();
     }
@@ -181,6 +184,196 @@ describe("installer", () => {
       expect(result.exitCode).toBe(0);
       expect(result.fileExists(".tokenprofile/hook.sh")).toBe(true);
       expect(result.stdout).toContain("Neither");
+    } finally {
+      result.cleanup();
+    }
+  });
+
+  it("skips settings.json rewrite when hook already configured", async () => {
+    // First run to get hook installed with correct paths
+    const result1 = await runInstaller({
+      homeDirs: [".claude"],
+      mockServerPort: port,
+      installerScript,
+    });
+
+    expect(result1.exitCode).toBe(0);
+    // Inject a custom key and use 4-space indent to detect any reformatting
+    const settings = JSON.parse(result1.readFile(".claude/settings.json")!);
+    settings.customKey = "user-value";
+    const customContent = JSON.stringify(settings, null, 4);
+    fs.writeFileSync(
+      path.join(result1.homeDir, ".claude/settings.json"),
+      customContent
+    );
+
+    // Second run should skip
+    const result2 = await runInstaller({
+      existingHomeDir: result1.homeDir,
+      mockServerPort: port,
+      installerScript,
+    });
+
+    try {
+      expect(result2.exitCode).toBe(0);
+      expect(result2.stdout).toContain("Hook already configured");
+      // File should be byte-for-byte identical (no reformat)
+      const afterContent = result2.readFile(".claude/settings.json")!;
+      expect(afterContent).toBe(customContent);
+    } finally {
+      result1.cleanup();
+    }
+  });
+
+  it("skips Cursor hooks.json rewrite when hook already configured", async () => {
+    // First run to get hook installed with correct paths
+    const result1 = await runInstaller({
+      homeDirs: [".cursor"],
+      mockServerPort: port,
+      installerScript,
+    });
+
+    expect(result1.exitCode).toBe(0);
+    const hooks = JSON.parse(result1.readFile(".cursor/hooks.json")!);
+    hooks.customKey = "user-value";
+    const customContent = JSON.stringify(hooks, null, 4);
+    fs.writeFileSync(
+      path.join(result1.homeDir, ".cursor/hooks.json"),
+      customContent
+    );
+
+    // Second run should skip
+    const result2 = await runInstaller({
+      existingHomeDir: result1.homeDir,
+      mockServerPort: port,
+      installerScript,
+    });
+
+    try {
+      expect(result2.exitCode).toBe(0);
+      expect(result2.stdout).toContain("Hook already configured");
+      const afterContent = result2.readFile(".cursor/hooks.json")!;
+      expect(afterContent).toBe(customContent);
+    } finally {
+      result1.cleanup();
+    }
+  });
+
+  it("uses python3 fallback for Claude Code when jq is unavailable", async () => {
+    const noJq = (s: string) => s.replace(/command -v jq/g, "false");
+    const existingSettings = {
+      customKey: "preserve-me",
+      hooks: {
+        Stop: [
+          {
+            matcher: "",
+            hooks: [{ type: "command", command: "echo existing" }],
+          },
+        ],
+      },
+    };
+
+    const result = await runInstaller({
+      homeDirs: [".claude"],
+      homeFiles: {
+        ".claude/settings.json": JSON.stringify(existingSettings, null, 2),
+      },
+      mockServerPort: port,
+      installerScript,
+      scriptTransform: noJq,
+    });
+
+    try {
+      expect(result.exitCode).toBe(0);
+      const settings = JSON.parse(result.readFile(".claude/settings.json")!);
+      // Existing data preserved
+      expect(settings.customKey).toBe("preserve-me");
+      // Both hooks present
+      expect(settings.hooks.Stop.length).toBeGreaterThanOrEqual(2);
+      const commands = settings.hooks.Stop.map(
+        (s: { hooks: { command: string }[] }) => s.hooks[0].command
+      );
+      expect(commands).toContain("echo existing");
+      expect(commands.some((c: string) => c.includes("hook.sh"))).toBe(true);
+    } finally {
+      result.cleanup();
+    }
+  });
+
+  it("uses python3 fallback for Cursor when jq is unavailable", async () => {
+    const noJq = (s: string) => s.replace(/command -v jq/g, "false");
+    const existingHooks = {
+      version: 1,
+      customKey: "preserve-me",
+      hooks: {
+        stop: [
+          {
+            command: "/bin/bash",
+            args: ["/usr/local/bin/other-hook.sh"],
+          },
+        ],
+      },
+    };
+
+    const result = await runInstaller({
+      homeDirs: [".cursor"],
+      homeFiles: {
+        ".cursor/hooks.json": JSON.stringify(existingHooks, null, 2),
+      },
+      mockServerPort: port,
+      installerScript,
+      scriptTransform: noJq,
+    });
+
+    try {
+      expect(result.exitCode).toBe(0);
+      const hooks = JSON.parse(result.readFile(".cursor/hooks.json")!);
+      // Existing data preserved
+      expect(hooks.customKey).toBe("preserve-me");
+      expect(hooks.version).toBe(1);
+      // Both hooks present
+      expect(hooks.hooks.stop.length).toBe(2);
+      const args = hooks.hooks.stop.map(
+        (h: { args: string[] }) => h.args[0]
+      );
+      expect(args).toContain("/usr/local/bin/other-hook.sh");
+      expect(args.some((a: string) => a.includes("hook.sh"))).toBe(true);
+    } finally {
+      result.cleanup();
+    }
+  });
+
+  it("preserves existing Cursor hooks.json when merging", async () => {
+    const existingHooks = {
+      version: 1,
+      hooks: {
+        stop: [
+          {
+            command: "/bin/bash",
+            args: ["/usr/local/bin/other-hook.sh"],
+          },
+        ],
+      },
+    };
+
+    const result = await runInstaller({
+      homeDirs: [".cursor"],
+      homeFiles: {
+        ".cursor/hooks.json": JSON.stringify(existingHooks, null, 2),
+      },
+      mockServerPort: port,
+      installerScript,
+    });
+
+    try {
+      expect(result.exitCode).toBe(0);
+      const hooks = JSON.parse(result.readFile(".cursor/hooks.json")!);
+      expect(hooks.hooks.stop.length).toBe(2);
+      const args = hooks.hooks.stop.map(
+        (h: { args: string[] }) => h.args[0]
+      );
+      expect(args).toContain("/usr/local/bin/other-hook.sh");
+      expect(args.some((a: string) => a.includes("hook.sh"))).toBe(true);
     } finally {
       result.cleanup();
     }

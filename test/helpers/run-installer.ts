@@ -16,6 +16,8 @@ interface RunInstallerOptions {
   apiKey?: string;
   /** Reuse an existing HOME dir instead of creating a new one */
   existingHomeDir?: string;
+  /** Transform to apply to the installer script before running */
+  scriptTransform?: (script: string) => string;
 }
 
 interface RunInstallerResult {
@@ -36,6 +38,7 @@ export function runInstaller(options: RunInstallerOptions): Promise<RunInstaller
     installerScript,
     apiKey = "test-api-key-123",
     existingHomeDir,
+    scriptTransform,
   } = options;
 
   const homeDir = existingHomeDir || fs.mkdtempSync(path.join(os.tmpdir(), "tp-installer-test-"));
@@ -53,10 +56,14 @@ export function runInstaller(options: RunInstallerOptions): Promise<RunInstaller
   }
 
   // Replace the download URL in the installer script to point at mock server
-  const modifiedScript = installerScript.replace(
+  let modifiedScript = installerScript.replace(
     /curl -fsSL "https:\/\/tokenprofile\.app\/scripts\/tokenprofile-hook\.sh"/,
     `curl -fsSL "http://localhost:${mockServerPort}/scripts/tokenprofile-hook.sh"`
   );
+
+  if (scriptTransform) {
+    modifiedScript = scriptTransform(modifiedScript);
+  }
 
   const scriptPath = path.join(homeDir, "_installer.sh");
   fs.writeFileSync(scriptPath, modifiedScript, { mode: 0o755 });
