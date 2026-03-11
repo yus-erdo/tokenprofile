@@ -9,6 +9,7 @@ import {
   onSnapshot,
   Timestamp,
 } from "firebase/firestore";
+import { useSession } from "next-auth/react";
 import { db } from "@/lib/firebase/client";
 import { Heatmap } from "@/components/heatmap";
 
@@ -102,6 +103,8 @@ export function ProfileContent({
   const [completionCount, setCompletionCount] = useState(initialCompletionCount);
   const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
   const [statsFlash, setStatsFlash] = useState(false);
+  const { data: session } = useSession();
+  const isOwner = session?.user?.username === username;
   const isFirstSnapshot = useRef(true);
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const statsTimer = useRef<ReturnType<typeof setTimeout>>(null);
@@ -233,35 +236,39 @@ export function ProfileContent({
         <Heatmap data={heatmapData} year={year} />
       </div>
 
-      {/* Recent completions */}
-      <h2 className="text-lg font-semibold mb-3">Recent Completions</h2>
-      <div className="space-y-2">
-        {completions.slice(0, 20).map((s) => (
-          <div
-            key={s.id}
-            className="flex flex-col sm:flex-row sm:items-center sm:justify-between border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3 text-sm gap-2 sm:gap-3"
-            style={highlightedIds.has(s.id) ? ROW_HIGHLIGHTED_STYLE : ROW_BASE_STYLE}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="font-medium truncate">{s.model || "unknown"}</span>
-              <span className="text-gray-400 dark:text-gray-500 shrink-0">{s.provider}</span>
-              {s.project && (
-                <span className="text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded shrink-0">
-                  {s.project}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-4 text-gray-500 dark:text-gray-400 shrink-0">
-              <span>{(s.totalTokens || 0).toLocaleString()} tokens</span>
-              <span>${Number(s.costUsd || 0).toFixed(4)}</span>
-              <span>{new Date(s.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
-            </div>
+      {/* Recent completions — only visible to profile owner */}
+      {isOwner && (
+        <>
+          <h2 className="text-lg font-semibold mb-3">Recent Completions</h2>
+          <div className="space-y-2">
+            {completions.slice(0, 20).map((s) => (
+              <div
+                key={s.id}
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3 text-sm gap-2 sm:gap-3"
+                style={highlightedIds.has(s.id) ? ROW_HIGHLIGHTED_STYLE : ROW_BASE_STYLE}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="font-medium truncate">{s.model || "unknown"}</span>
+                  <span className="text-gray-400 dark:text-gray-500 shrink-0">{s.provider}</span>
+                  {s.project && (
+                    <span className="text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded shrink-0">
+                      {s.project}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-4 text-gray-500 dark:text-gray-400 shrink-0">
+                  <span>{(s.totalTokens || 0).toLocaleString()} tokens</span>
+                  <span>${Number(s.costUsd || 0).toFixed(4)}</span>
+                  <span>{new Date(s.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                </div>
+              </div>
+            ))}
+            {completions.length === 0 && (
+              <p className="text-gray-400 dark:text-gray-500 text-center py-8">No completions recorded yet</p>
+            )}
           </div>
-        ))}
-        {completions.length === 0 && (
-          <p className="text-gray-400 dark:text-gray-500 text-center py-8">No completions recorded yet</p>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }
