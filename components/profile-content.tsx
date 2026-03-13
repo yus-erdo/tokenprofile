@@ -34,13 +34,20 @@ interface ProfileContentProps {
   initialTotalCost: number;
   initialFavoriteModel: string;
   initialCompletionCount: number;
+  initialTodayTokens: number;
+  initialTodayCost: number;
+  initialTodayCompletions: number;
 }
 
 function computeStats(completions: Completion[]) {
   const heatmapData: Record<string, { tokens: number; completions: number }> = {};
   let totalTokens = 0;
   let totalCost = 0;
+  let todayTokens = 0;
+  let todayCost = 0;
+  let todayCompletions = 0;
   const modelCounts: Record<string, number> = {};
+  const todayDate = new Date().toISOString().split("T")[0];
 
   for (const s of completions) {
     const date = s.timestamp.split("T")[0] || "";
@@ -51,13 +58,34 @@ function computeStats(completions: Completion[]) {
     };
     totalTokens += s.totalTokens || 0;
     totalCost += Number(s.costUsd || 0);
+    if (date === todayDate) {
+      todayTokens += s.totalTokens || 0;
+      todayCost += Number(s.costUsd || 0);
+      todayCompletions += 1;
+    }
     if (s.model) modelCounts[s.model] = (modelCounts[s.model] || 0) + 1;
   }
 
   const favoriteModel =
     Object.entries(modelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
 
-  return { heatmapData, totalTokens, totalCost, favoriteModel, completionCount: completions.length };
+  return {
+    heatmapData,
+    totalTokens,
+    totalCost,
+    favoriteModel,
+    completionCount: completions.length,
+    todayTokens,
+    todayCost,
+    todayCompletions,
+  };
+}
+
+function formatTokens(tokens: number): string {
+  if (tokens >= 1_000_000_000) return `${(tokens / 1_000_000_000).toFixed(1)}B`;
+  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
+  if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(1)}K`;
+  return String(tokens);
 }
 
 const ROW_BASE_STYLE: CSSProperties = {
@@ -94,6 +122,9 @@ export function ProfileContent({
   initialTotalCost,
   initialFavoriteModel,
   initialCompletionCount,
+  initialTodayTokens,
+  initialTodayCost,
+  initialTodayCompletions,
 }: ProfileContentProps) {
   const [completions, setCompletions] = useState(initialCompletions);
   const [heatmapData, setHeatmapData] = useState(initialHeatmapData);
@@ -101,6 +132,9 @@ export function ProfileContent({
   const [totalCost, setTotalCost] = useState(initialTotalCost);
   const [favoriteModel, setFavoriteModel] = useState(initialFavoriteModel);
   const [completionCount, setCompletionCount] = useState(initialCompletionCount);
+  const [todayTokens, setTodayTokens] = useState(initialTodayTokens);
+  const [todayCost, setTodayCost] = useState(initialTodayCost);
+  const [todayCompletions, setTodayCompletions] = useState(initialTodayCompletions);
   const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
   const [statsFlash, setStatsFlash] = useState(false);
   const { data: session } = useSession();
@@ -176,6 +210,9 @@ export function ProfileContent({
       setTotalCost(stats.totalCost);
       setFavoriteModel(stats.favoriteModel);
       setCompletionCount(stats.completionCount);
+      setTodayTokens(stats.todayTokens);
+      setTodayCost(stats.todayCost);
+      setTodayCompletions(stats.todayCompletions);
 
       if (isFirstSnapshot.current) {
         isFirstSnapshot.current = false;
@@ -198,16 +235,43 @@ export function ProfileContent({
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-          <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{completionCount}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">Completions</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Completions</div>
+          <div className="flex items-baseline justify-between">
+            <div>
+              <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{todayCompletions}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500">today</div>
+            </div>
+            <div className="text-right">
+              <div className="text-lg text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{completionCount}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500">{year}</div>
+            </div>
+          </div>
         </div>
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-          <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{totalTokens >= 1_000_000 ? `${(totalTokens / 1_000_000).toFixed(1)}M` : totalTokens >= 1_000 ? `${(totalTokens / 1_000).toFixed(1)}K` : totalTokens}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">Tokens</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Tokens</div>
+          <div className="flex items-baseline justify-between">
+            <div>
+              <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{formatTokens(todayTokens)}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500">today</div>
+            </div>
+            <div className="text-right">
+              <div className="text-lg text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{formatTokens(totalTokens)}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500">{year}</div>
+            </div>
+          </div>
         </div>
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-          <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>${totalCost.toFixed(2)}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">Estimated Cost</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Estimated Cost</div>
+          <div className="flex items-baseline justify-between">
+            <div>
+              <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>${todayCost.toFixed(2)}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500">today</div>
+            </div>
+            <div className="text-right">
+              <div className="text-lg text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>${totalCost.toFixed(2)}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500">{year}</div>
+            </div>
+          </div>
         </div>
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
           <div className="text-2xl font-bold truncate text-sm" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{favoriteModel}</div>

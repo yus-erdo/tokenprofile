@@ -51,7 +51,11 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const heatmapData: Record<string, { tokens: number; completions: number }> = {};
   let totalTokens = 0;
   let totalCost = 0;
+  let todayTokens = 0;
+  let todayCost = 0;
+  let todayCompletions = 0;
   const modelCounts: Record<string, number> = {};
+  const todayDate = new Date().toISOString().split("T")[0];
 
   const completions: Completion[] = sessionsSnapshot.docs.map((doc) => {
     const s = doc.data();
@@ -63,6 +67,11 @@ export default async function ProfilePage({ params, searchParams }: Props) {
     };
     totalTokens += s.totalTokens || 0;
     totalCost += Number(s.costUsd || 0);
+    if (date === todayDate) {
+      todayTokens += s.totalTokens || 0;
+      todayCost += Number(s.costUsd || 0);
+      todayCompletions += 1;
+    }
     if (s.model) modelCounts[s.model] = (modelCounts[s.model] || 0) + 1;
     return {
       id: doc.id,
@@ -143,6 +152,9 @@ export default async function ProfilePage({ params, searchParams }: Props) {
             initialTotalCost={totalCost}
             initialFavoriteModel={favoriteModel}
             initialCompletionCount={completionCount}
+            initialTodayTokens={todayTokens}
+            initialTodayCost={todayCost}
+            initialTodayCompletions={todayCompletions}
           />
         )}
       </div>
