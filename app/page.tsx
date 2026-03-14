@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { signIn } from "next-auth/react";
 
 // Heatmap colors from components/heatmap.tsx (dark mode palette)
 const HEATMAP_COLORS = ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"];
@@ -128,29 +128,53 @@ function ScrollReveal({
 // --- Heatmap Grid ---
 function HeroHeatmap() {
   const [grid, setGrid] = useState<number[][] | null>(null);
+  const [scale, setScale] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setGrid(generateHeatmapData(7, 20));
+    setGrid(generateHeatmapData(7, 52));
   }, []);
+
+  useEffect(() => {
+    if (!containerRef.current || !innerRef.current) return;
+    function recalc() {
+      const container = containerRef.current;
+      const inner = innerRef.current;
+      if (!container || !inner) return;
+      const containerW = container.clientWidth;
+      const innerW = inner.scrollWidth;
+      setScale(innerW > containerW ? containerW / innerW : 1);
+    }
+    recalc();
+    window.addEventListener("resize", recalc);
+    return () => window.removeEventListener("resize", recalc);
+  }, [grid]);
 
   if (!grid) return <div className="h-[85px] md:h-[112px]" />;
 
   return (
-    <div className="flex gap-[3px] justify-center">
-      {grid[0].map((_, colIdx) => (
-        <div key={colIdx} className="flex flex-col gap-[3px]">
-          {grid.map((row, rowIdx) => (
-            <div
-              key={rowIdx}
-              className="w-[10px] h-[10px] md:w-[14px] md:h-[14px] rounded-[2px] animate-heatmap-cell"
-              style={{
-                backgroundColor: HEATMAP_COLORS[row[colIdx]],
-                animationDelay: `${(colIdx * 7 + rowIdx) * 20}ms`,
-              }}
-            />
-          ))}
-        </div>
-      ))}
+    <div ref={containerRef} className="w-full overflow-hidden px-4">
+      <div
+        ref={innerRef}
+        className="flex gap-[2px] justify-center"
+        style={{ transform: `scale(${scale})`, transformOrigin: "top center", height: scale < 1 ? `${91 * scale}px` : undefined }}
+      >
+        {grid[0].map((_, colIdx) => (
+          <div key={colIdx} className="flex flex-col gap-[2px] shrink-0">
+            {grid.map((row, rowIdx) => (
+              <div
+                key={rowIdx}
+                className="w-[11px] h-[11px] rounded-[2px] animate-heatmap-cell"
+                style={{
+                  backgroundColor: HEATMAP_COLORS[row[colIdx]],
+                  animationDelay: `${(colIdx * 7 + rowIdx) * 8}ms`,
+                }}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -208,6 +232,21 @@ function MiniHeatmap({ rows = 4, cols = 8 }: { rows?: number; cols?: number }) {
   );
 }
 
+// --- GitHub Sign In Button ---
+function GitHubButton({ large = false }: { large?: boolean }) {
+  return (
+    <button
+      onClick={() => signIn("github")}
+      className={`inline-flex items-center gap-2.5 rounded-lg font-semibold text-white bg-[#222] border border-[#333] hover:bg-[#2a2a2a] hover:border-[#444] transition-all ${large ? "px-8 py-3.5 text-lg" : "px-6 py-3"}`}
+    >
+      <svg className={large ? "w-6 h-6" : "w-5 h-5"} fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+      </svg>
+      Sign in with GitHub
+    </button>
+  );
+}
+
 // --- Section Components ---
 
 function HeroSection() {
@@ -215,12 +254,12 @@ function HeroSection() {
     <section className="min-h-screen flex items-center justify-center px-4">
       <div className="text-center space-y-8 max-w-2xl mx-auto">
         <p
-          className="font-mono text-sm tracking-[3px] uppercase"
+          className="font-mono text-sm tracking-[3px]"
           style={{ color: "#00ff88" }}
         >
-          TOQQEN
+          toqqen
         </p>
-        <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+        <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">
           The Fitbit for your AI usage.
         </h1>
         <p className="text-base md:text-lg text-[#666] max-w-md mx-auto">
@@ -247,13 +286,7 @@ function HeroSection() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-          <Link
-            href="/sign-in"
-            className="inline-flex items-center px-8 py-3 rounded-lg font-semibold text-[#0a0a0a] transition-all animate-pulse-glow"
-            style={{ backgroundColor: "#00ff88" }}
-          >
-            Get Started
-          </Link>
+          <GitHubButton />
           <CopyInstallCommand command="curl -fsSL toqqen.dev/install | bash" />
         </div>
       </div>
@@ -533,13 +566,7 @@ function FinalCTASection() {
         </ScrollReveal>
 
         <ScrollReveal delay={200}>
-          <Link
-            href="/sign-in"
-            className="inline-flex items-center px-10 py-3.5 rounded-lg font-semibold text-[#0a0a0a] text-lg transition-all animate-pulse-glow"
-            style={{ backgroundColor: "#00ff88" }}
-          >
-            Get Started
-          </Link>
+          <GitHubButton large />
         </ScrollReveal>
 
         <ScrollReveal delay={400}>
@@ -549,8 +576,8 @@ function FinalCTASection() {
         </ScrollReveal>
 
         <div className="pt-16">
-          <p className="font-mono text-xs text-[#333] tracking-[2px] uppercase">
-            Toqqen
+          <p className="font-mono text-xs text-[#333] tracking-[2px]">
+            toqqen
           </p>
         </div>
       </div>
@@ -562,7 +589,7 @@ function FinalCTASection() {
 
 export default function Home() {
   return (
-    <div className="bg-[#0a0a0a] text-white min-h-screen" style={{ colorScheme: "dark" }}>
+    <div className="bg-[#0a0a0a] text-white min-h-screen overflow-x-hidden" style={{ colorScheme: "dark" }}>
       <HeroSection />
       <HowItWorksSection />
       <FeatureGridSection />
