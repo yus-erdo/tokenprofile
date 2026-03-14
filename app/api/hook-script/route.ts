@@ -3,7 +3,24 @@ import { NextResponse } from "next/server";
 const SCRIPT = `#!/bin/bash
 set -e
 
-API_KEY="\${1:?Usage: curl ... | bash -s -- YOUR_API_KEY}"
+API_KEY="\${1:-}"
+
+if [ -z "$API_KEY" ]; then
+  if [ -t 0 ] || [ -t 2 ]; then
+    echo ""
+    echo "  Welcome to toqqen!"
+    echo "  Get your API key at: https://toqqen.dev/settings"
+    echo ""
+    printf "  Enter your API key: " >&2
+    read -r API_KEY < /dev/tty
+    echo ""
+  fi
+  if [ -z "$API_KEY" ]; then
+    echo "Error: API key is required." >&2
+    echo "Usage: curl -fsSL toqqen.dev/install | bash -s -- YOUR_API_KEY" >&2
+    exit 1
+  fi
+fi
 
 HOOK_DIR="$HOME/.toqqen"
 HOOK_SCRIPT="$HOOK_DIR/hook.sh"

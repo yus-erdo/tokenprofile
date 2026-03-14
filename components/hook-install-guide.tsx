@@ -17,7 +17,7 @@ export function HookInstallGuide({ apiKey, footer }: HookInstallGuideProps) {
   const [copiedClaudeJson, setCopiedClaudeJson] = useState(false);
   const [copiedCursorJson, setCopiedCursorJson] = useState(false);
 
-  const autoCommand = `curl -fsSL https://toqqen.dev/api/hook-script | bash -s -- "${apiKey}"`;
+  const autoCommand = `curl -fsSL toqqen.dev/install | bash -s -- "${apiKey}"`;
 
   const claudeManualJson = JSON.stringify(
     {

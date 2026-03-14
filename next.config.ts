@@ -1,7 +1,16 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/install",
+        destination: "/api/hook-script",
+      },
+    ];
+  },
+};
 
 export default withSentryConfig(nextConfig, {
   // For all available options, see:

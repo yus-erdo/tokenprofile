@@ -14,6 +14,10 @@ interface RunInstallerOptions {
   installerScript: string;
   /** API key argument */
   apiKey?: string;
+  /** Skip passing the API key argument entirely */
+  skipApiKey?: boolean;
+  /** Input to feed via simulated /dev/tty (for interactive prompt testing) */
+  ttyInput?: string;
   /** Reuse an existing HOME dir instead of creating a new one */
   existingHomeDir?: string;
   /** Transform to apply to the installer script before running */
@@ -37,6 +41,8 @@ export function runInstaller(options: RunInstallerOptions): Promise<RunInstaller
     mockServerPort,
     installerScript,
     apiKey = "test-api-key-123",
+    skipApiKey = false,
+    ttyInput,
     existingHomeDir,
     scriptTransform,
   } = options;
@@ -65,13 +71,33 @@ export function runInstaller(options: RunInstallerOptions): Promise<RunInstaller
     modifiedScript = scriptTransform(modifiedScript);
   }
 
+  // When ttyInput is provided, create a file to simulate /dev/tty input
+  // and patch the script to read from that file instead of /dev/tty
+  let ttyFile: string | undefined;
+  if (ttyInput !== undefined) {
+    ttyFile = path.join(homeDir, "_tty_input");
+    fs.writeFileSync(ttyFile, ttyInput);
+    modifiedScript = modifiedScript.replace(
+      /read -r API_KEY < \/dev\/tty/,
+      `read -r API_KEY < "${ttyFile}"`
+    );
+    // Make the TTY check pass by replacing /dev/tty-based checks
+    // with a check for our fake tty file
+    modifiedScript = modifiedScript.replace(
+      /if \[ -t 0 \] \|\| \[ -t 2 \]/,
+      `if [ -f "${ttyFile}" ]`
+    );
+  }
+
   const scriptPath = path.join(homeDir, "_installer.sh");
   fs.writeFileSync(scriptPath, modifiedScript, { mode: 0o755 });
+
+  const args = skipApiKey ? [scriptPath] : [scriptPath, apiKey];
 
   return new Promise((resolve) => {
     execFile(
       "bash",
-      [scriptPath, apiKey],
+      args,
       {
         env: {
           PATH: process.env.PATH,
