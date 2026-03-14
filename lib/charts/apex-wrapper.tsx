@@ -41,7 +41,7 @@ export function ChartWrapper({ options, ...props }: ChartWrapperProps) {
       theme: isDark ? 'dark' : 'light',
       ...options.tooltip,
     },
-    colors: options.colors || colors.series,
+    colors: options.colors || [...colors.series],
   }
 
   return <ReactApexChart options={themedOptions} {...props} />
