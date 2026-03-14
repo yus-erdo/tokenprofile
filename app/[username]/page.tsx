@@ -25,11 +25,19 @@ export default async function ProfilePage({ params, searchParams }: Props) {
       .where("username", "==", username)
       .limit(1)
       .get();
-  } catch {
-    notFound();
+    if (usersSnapshot.empty) notFound();
+  } catch (err) {
+    // On Firestore errors (quota, network), show a basic error page
+    console.error("Failed to fetch user:", err);
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-mono-accent font-bold mb-2">temporarily unavailable</h1>
+          <p className="text-gray-500 font-mono-accent text-sm">firestore quota exceeded — try again shortly</p>
+        </div>
+      </div>
+    );
   }
-
-  if (usersSnapshot.empty) notFound();
 
   const userDoc = usersSnapshot.docs[0];
   const user = userDoc.data();
