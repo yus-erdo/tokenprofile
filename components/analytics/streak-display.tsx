@@ -1,24 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
 interface StreakData {
   currentStreak: number
   longestStreak: number
   totalActiveDays: number
 }
 
-export function StreakDisplay() {
-  const [data, setData] = useState<StreakData | null>(null)
-
-  useEffect(() => {
-    fetch('/api/users/me/analytics/streaks')
-      .then(r => r.json())
-      .then(setData)
-  }, [])
-
-  if (!data) return null
-
+export function StreakDisplay({ data }: { data: StreakData }) {
   const items = [
     { label: 'current streak', value: `${data.currentStreak}d` },
     { label: 'longest streak', value: `${data.longestStreak}d` },

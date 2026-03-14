@@ -20,6 +20,7 @@ import { PeakHoursChart } from "@/components/analytics/peak-hours-chart";
 import { StreakDisplay } from "@/components/analytics/streak-display";
 import { TrendsChart } from "@/components/analytics/trends-chart";
 import { ModelBreakdown } from "@/components/analytics/model-breakdown";
+import { useAnalytics } from "@/lib/hooks/use-analytics";
 
 export interface Completion {
   id: string;
@@ -321,14 +322,7 @@ export function ProfileContent({
       </BentoCard>
 
       {/* Analytics — only visible to profile owner */}
-      {isOwner && (
-        <div className="space-y-6 mb-6">
-          <StreakDisplay />
-          <ModelBreakdown year={year} />
-          <TrendsChart year={year} />
-          <PeakHoursChart year={year} />
-        </div>
-      )}
+      {isOwner && <AnalyticsSection year={year} />}
 
       {/* Recent completions — only visible to profile owner */}
       {isOwner && (
@@ -365,4 +359,21 @@ export function ProfileContent({
       )}
     </div>
   );
+}
+
+function AnalyticsSection({ year }: { year: number }) {
+  const [granularity, setGranularity] = useState<'week' | 'month'>('week')
+  const { data, loading } = useAnalytics(year, granularity)
+
+  if (loading) return <div className="h-32 animate-pulse bg-gray-100 dark:bg-gray-900 rounded-lg mb-6" />
+  if (!data) return null
+
+  return (
+    <div className="space-y-6 mb-6">
+      <StreakDisplay data={data.streaks} />
+      <ModelBreakdown data={data.models} />
+      <TrendsChart data={data.trends} granularity={granularity} onGranularityChange={setGranularity} />
+      <PeakHoursChart data={data.peakHours} />
+    </div>
+  )
 }

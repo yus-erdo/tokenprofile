@@ -1,7 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
 interface ModelData {
   model: string
   tokens: number
@@ -10,25 +8,21 @@ interface ModelData {
   percentage: number
 }
 
-export function ModelBreakdown({ year }: { year: number }) {
-  const [models, setModels] = useState<ModelData[]>([])
-  const [loading, setLoading] = useState(true)
+interface Props {
+  data: {
+    models: ModelData[]
+    totalTokens: number
+  }
+}
 
-  useEffect(() => {
-    fetch(`/api/users/me/analytics/models?year=${year}`)
-      .then(r => r.json())
-      .then(d => setModels(d.models || []))
-      .finally(() => setLoading(false))
-  }, [year])
-
-  if (loading) return <div className="h-32 animate-pulse bg-gray-100 dark:bg-gray-900 rounded-lg" />
-  if (models.length === 0) return null
+export function ModelBreakdown({ data }: Props) {
+  if (data.models.length === 0) return null
 
   return (
     <div>
       <h3 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent mb-3">~ models</h3>
       <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-        {models.map((m, i) => (
+        {data.models.map((m, i) => (
           <div
             key={m.model}
             className={`flex items-center justify-between px-4 py-2.5 ${i !== 0 ? 'border-t border-gray-100 dark:border-gray-800/50' : ''}`}

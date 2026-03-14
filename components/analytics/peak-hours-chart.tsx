@@ -1,30 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { ChartWrapper } from '@/lib/charts/apex-wrapper'
 
-interface PeakHoursData {
-  hourly: { hour: number; completions: number; tokens: number; cost: number }[]
-  daily: { day: number; completions: number; tokens: number; cost: number }[]
+interface Props {
+  data: {
+    hourly: { hour: number; completions: number; tokens: number; cost: number }[]
+    daily: { day: number; completions: number; tokens: number; cost: number }[]
+  }
 }
 
-export function PeakHoursChart({ year }: { year: number }) {
-  const [data, setData] = useState<PeakHoursData | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch(`/api/users/me/analytics/peak-hours?year=${year}`)
-      .then(r => r.json())
-      .then(setData)
-      .finally(() => setLoading(false))
-  }, [year])
-
-  if (loading || !data) return <div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-900 rounded-lg" />
-
-  const hourLabels = Array.from({ length: 24 }, (_, i) =>
-    i === 0 ? '0' : i < 10 ? `${i}` : `${i}`
-  )
-
+export function PeakHoursChart({ data }: Props) {
+  const hourLabels = Array.from({ length: 24 }, (_, i) => String(i))
   const dayLabels = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
   const hourlyOptions: ApexCharts.ApexOptions = {
@@ -38,7 +24,7 @@ export function PeakHoursChart({ year }: { year: number }) {
   const dailyOptions: ApexCharts.ApexOptions = {
     chart: { type: 'bar', height: 180 },
     plotOptions: { bar: { borderRadius: 2, horizontal: true, barHeight: '60%' } },
-    xaxis: {},
+    xaxis: { categories: dayLabels },
     yaxis: { labels: { style: { fontSize: '10px' } } },
     dataLabels: { enabled: false },
   }
@@ -59,10 +45,7 @@ export function PeakHoursChart({ year }: { year: number }) {
         <ChartWrapper
           type="bar"
           height={180}
-          options={{
-            ...dailyOptions,
-            xaxis: { ...dailyOptions.xaxis, categories: dayLabels },
-          }}
+          options={dailyOptions}
           series={[{ name: 'completions', data: data.daily.map(d => d.completions) }]}
         />
       </div>
