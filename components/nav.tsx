@@ -11,7 +11,7 @@ export function Nav() {
   return (
     <nav className="border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href={username ? `/${username}` : "/"} className="text-lg font-bold">Token Profile</Link>
+        <Link href={username ? `/${username}` : "/"} className="text-lg font-bold">Toqqen</Link>
         <div className="flex items-center gap-4">
           <ThemeToggle />
           {session ? (

@@ -24,7 +24,7 @@ test/
       claude-code-payload.json, cursor-payload.json
   helpers/
     mock-server.ts      # http.createServer on port 0, captures POSTs, serves hook script for installer
-    run-hook.ts         # Spawns scripts/tokenprofile-hook.sh with env/stdin/temp files
+    run-hook.ts         # Spawns scripts/toqqen-hook.sh with env/stdin/temp files
     run-installer.ts    # Runs installer in sandboxed $HOME (temp dir)
   hook-script.test.ts   # 8 tests — validates bash hook script pipeline
   installer.test.ts     # 8 tests — validates installer script from hook-script route
@@ -39,7 +39,7 @@ test/
 - Uses `run-hook.ts` helper which:
   1. Copies transcript fixture to a temp file
   2. Replaces `PLACEHOLDER` in envelope with real temp path
-  3. Spawns `bash scripts/tokenprofile-hook.sh` with controlled env vars
+  3. Spawns `bash scripts/toqqen-hook.sh` with controlled env vars
   4. Pipes modified envelope to stdin
   5. Returns exit code, stdout, stderr
 - Asserts against captured POST body on mock server

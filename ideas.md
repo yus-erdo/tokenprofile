@@ -1,4 +1,4 @@
-# TokenProfile Ideas
+# Toqqen Ideas
 
 ## Features
 
@@ -105,7 +105,7 @@
 ### Content Marketing
 - "I spent $X on AI tokens last month" — share your own usage data, people love transparency
 - Build in public — tweet progress, share stats, open source learnings
-- Comparison posts — "GitHub tracks code contributions, TokenProfile tracks AI contributions"
+- Comparison posts — "GitHub tracks code contributions, Toqqen tracks AI contributions"
 - Short demo video — 30-second screen recording, post everywhere
 - Blog series — "What your AI usage says about your workflow"
 
@@ -125,7 +125,7 @@
 ### Growth Tactics
 - Public profiles = free SEO — each user page is indexable
 - Referral program — invite a friend, unlock premium features
-- GitHub README badge — "Powered by TokenProfile" with live stats
+- GitHub README badge — "Powered by Toqqen" with live stats
 - Free tier generous — let people use it fully, monetize teams/orgs later
 - Open source the hook script — get PRs and contributors
 

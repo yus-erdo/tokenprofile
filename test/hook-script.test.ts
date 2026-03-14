@@ -38,8 +38,8 @@ describe("hook-script", () => {
   });
 
   const hookEnv = () => ({
-    TOKEN_PROFILE_API_KEY: "test-key-123",
-    TOKEN_PROFILE_URL: `http://localhost:${port}`,
+    TOQQEN_API_KEY: "test-key-123",
+    TOQQEN_URL: `http://localhost:${port}`,
   });
 
   describe("Claude Code", () => {
@@ -147,7 +147,7 @@ describe("hook-script", () => {
       const result = await runHook({
         envelope,
         transcriptFixture: "claude-code.jsonl",
-        // No TOKEN_PROFILE_API_KEY in env
+        // No TOQQEN_API_KEY in env
       });
 
       expect(result.exitCode).toBe(0);
@@ -161,13 +161,13 @@ describe("hook-script", () => {
         transcriptFixture: "claude-code.jsonl",
         env: {
           ...hookEnv(),
-          TOKEN_PROFILE_DEBUG: "1",
+          TOQQEN_DEBUG: "1",
         },
       });
 
       expect(result.exitCode).toBe(0);
-      expect(result.stderr).toContain("tokenprofile: debug log at");
-      expect(result.stderr).toContain("/tmp/tokenprofile-debug/");
+      expect(result.stderr).toContain("toqqen: debug log at");
+      expect(result.stderr).toContain("/tmp/toqqen-debug/");
     });
   });
 });

@@ -4,7 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Token Profile",
+  title: "Toqqen",
   description: "Track your LLM token usage",
 };
 

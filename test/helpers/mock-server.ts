@@ -13,9 +13,9 @@ export function createMockServer() {
 
   const server = http.createServer((req, res) => {
     // Serve hook script for installer tests
-    if (req.method === "GET" && req.url?.includes("tokenprofile-hook.sh")) {
+    if (req.method === "GET" && req.url?.includes("toqqen-hook.sh")) {
       const script = fs.readFileSync(
-        path.resolve(__dirname, "../../scripts/tokenprofile-hook.sh"),
+        path.resolve(__dirname, "../../scripts/toqqen-hook.sh"),
         "utf-8"
       );
       res.writeHead(200, { "Content-Type": "text/plain" });

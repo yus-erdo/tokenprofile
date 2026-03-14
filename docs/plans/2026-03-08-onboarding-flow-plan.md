@@ -397,7 +397,7 @@ function StepInstallHook({ apiKey, userId, onContinue }: { apiKey: string; userI
   const [copiedJson, setCopiedJson] = useState(false);
 
   // One-liner that downloads the hook script and configures Claude Code settings
-  const autoCommand = `curl -fsSL https://tokenprofile.app/api/hook-script | bash -s -- "${apiKey}"`;
+  const autoCommand = `curl -fsSL https://toqqen.app/api/hook-script | bash -s -- "${apiKey}"`;
 
   const manualJson = JSON.stringify(
     {
@@ -408,7 +408,7 @@ function StepInstallHook({ apiKey, userId, onContinue }: { apiKey: string; userI
             hooks: [
               {
                 type: "command",
-                command: "bash /path/to/tokenprofile-hook.sh",
+                command: "bash /path/to/toqqen-hook.sh",
               },
             ],
           },
@@ -429,7 +429,7 @@ function StepInstallHook({ apiKey, userId, onContinue }: { apiKey: string; userI
     <div>
       <h2 className="text-xl font-semibold mb-2">Install the hook</h2>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        Connect Claude Code to Token Profile to start tracking your usage.
+        Connect Claude Code to Toqqen to start tracking your usage.
       </p>
 
       {/* Tabs */}
@@ -481,7 +481,7 @@ function StepInstallHook({ apiKey, userId, onContinue }: { apiKey: string; userI
               1. Set your API key in your shell config:
             </p>
             <code className="block bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-xs font-mono">
-              export TOKEN_PROFILE_API_KEY="{apiKey}"
+              export TOQQEN_API_KEY="{apiKey}"
             </code>
           </div>
           <div>
@@ -642,8 +642,8 @@ git commit -m "Add real-time hook verification with Firestore listener"
 
 **Step 1: Create the endpoint that serves an auto-installer script**
 
-The automatic install tab references `https://tokenprofile.app/api/hook-script`. This endpoint returns a bash script that:
-1. Downloads `tokenprofile-hook.sh` to `~/.claude/hooks/`
+The automatic install tab references `https://toqqen.app/api/hook-script`. This endpoint returns a bash script that:
+1. Downloads `toqqen-hook.sh` to `~/.claude/hooks/`
 2. Adds the API key to shell config
 3. Configures Claude Code settings
 
@@ -659,15 +659,15 @@ API_KEY="\${1:?Usage: curl ... | bash -s -- YOUR_API_KEY}"
 
 HOOK_DIR="$HOME/.claude/hooks"
 SETTINGS_FILE="$HOME/.claude/settings.json"
-HOOK_SCRIPT="$HOOK_DIR/tokenprofile-hook.sh"
+HOOK_SCRIPT="$HOOK_DIR/toqqen-hook.sh"
 
-echo "Installing Token Profile hook..."
+echo "Installing Toqqen hook..."
 
 # 1. Create hooks directory
 mkdir -p "$HOOK_DIR"
 
 # 2. Download hook script
-curl -fsSL "https://tokenprofile.app/scripts/tokenprofile-hook.sh" -o "$HOOK_SCRIPT"
+curl -fsSL "https://toqqen.app/scripts/toqqen-hook.sh" -o "$HOOK_SCRIPT"
 chmod +x "$HOOK_SCRIPT"
 
 # 3. Add API key to shell config
@@ -682,11 +682,11 @@ else
   SHELL_CONFIG="$HOME/.profile"
 fi
 
-if ! grep -q "TOKEN_PROFILE_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
-  printf '\\nexport TOKEN_PROFILE_API_KEY="%s"\\n' "$API_KEY" >> "$SHELL_CONFIG"
+if ! grep -q "TOQQEN_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
+  printf '\\nexport TOQQEN_API_KEY="%s"\\n' "$API_KEY" >> "$SHELL_CONFIG"
   echo "Added API key to $SHELL_CONFIG"
 else
-  echo "TOKEN_PROFILE_API_KEY already set in $SHELL_CONFIG"
+  echo "TOQQEN_API_KEY already set in $SHELL_CONFIG"
 fi
 
 # 4. Configure Claude Code settings
@@ -701,7 +701,7 @@ if [ -f "$SETTINGS_FILE" ]; then
     echo "Updated $SETTINGS_FILE"
   else
     echo "Warning: jq not found. Please manually add the hook to $SETTINGS_FILE"
-    echo "See: https://tokenprofile.app → Developer tab for manual setup instructions"
+    echo "See: https://toqqen.app → Developer tab for manual setup instructions"
   fi
 else
   mkdir -p "$(dirname "$SETTINGS_FILE")"
@@ -726,7 +726,7 @@ SETTINGS_EOF
 fi
 
 echo ""
-echo "Done! Token Profile hook installed."
+echo "Done! Toqqen hook installed."
 echo "Run a Claude Code completion to verify it's working."
 `;
 
@@ -742,23 +742,23 @@ export async function GET() {
 
 **Step 2: Serve the hook script as a static file**
 
-The installer downloads the hook script from `/scripts/tokenprofile-hook.sh`. In Next.js, files in `public/` are served statically. Copy or symlink:
+The installer downloads the hook script from `/scripts/toqqen-hook.sh`. In Next.js, files in `public/` are served statically. Copy or symlink:
 
 ```bash
 mkdir -p public/scripts
-cp scripts/tokenprofile-hook.sh public/scripts/tokenprofile-hook.sh
+cp scripts/toqqen-hook.sh public/scripts/toqqen-hook.sh
 ```
 
 **Step 3: Verify locally**
 
 Run: `bun dev`
 - `curl http://localhost:3000/api/hook-script` returns the installer script
-- `curl http://localhost:3000/scripts/tokenprofile-hook.sh` returns the hook script
+- `curl http://localhost:3000/scripts/toqqen-hook.sh` returns the hook script
 
 **Step 4: Commit**
 
 ```bash
-git add app/api/hook-script/route.ts public/scripts/tokenprofile-hook.sh
+git add app/api/hook-script/route.ts public/scripts/toqqen-hook.sh
 git commit -m "Add auto-install hook script endpoint"
 ```
 

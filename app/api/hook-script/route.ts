@@ -5,16 +5,16 @@ set -e
 
 API_KEY="\${1:?Usage: curl ... | bash -s -- YOUR_API_KEY}"
 
-HOOK_DIR="$HOME/.tokenprofile"
+HOOK_DIR="$HOME/.toqqen"
 HOOK_SCRIPT="$HOOK_DIR/hook.sh"
 
-echo "Installing Token Profile hook..."
+echo "Installing Toqqen hook..."
 
 # 1. Create hook directory
 mkdir -p "$HOOK_DIR"
 
 # 2. Download hook script
-curl -fsSL "https://tokenprofile.app/scripts/tokenprofile-hook.sh" -o "$HOOK_SCRIPT"
+curl -fsSL "https://toqqen.app/scripts/toqqen-hook.sh" -o "$HOOK_SCRIPT"
 chmod +x "$HOOK_SCRIPT"
 
 # 3. Add API key to shell config
@@ -29,11 +29,11 @@ else
   SHELL_CONFIG="$HOME/.profile"
 fi
 
-if ! grep -q "TOKEN_PROFILE_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
-  printf '\\nexport TOKEN_PROFILE_API_KEY="%s"\\n' "$API_KEY" >> "$SHELL_CONFIG"
+if ! grep -q "TOQQEN_API_KEY" "$SHELL_CONFIG" 2>/dev/null; then
+  printf '\\nexport TOQQEN_API_KEY="%s"\\n' "$API_KEY" >> "$SHELL_CONFIG"
   echo "Added API key to $SHELL_CONFIG"
 else
-  sed -i.bak 's|export TOKEN_PROFILE_API_KEY="[^"]*"|export TOKEN_PROFILE_API_KEY="'"$API_KEY"'"|' "$SHELL_CONFIG"
+  sed -i.bak 's|export TOQQEN_API_KEY="[^"]*"|export TOQQEN_API_KEY="'"$API_KEY"'"|' "$SHELL_CONFIG"
   rm -f "\${SHELL_CONFIG}.bak"
   echo "Updated API key in $SHELL_CONFIG"
 fi
@@ -45,7 +45,7 @@ if [ -d "$HOME/.claude" ]; then
   SETTINGS_FILE="$HOME/.claude/settings.json"
 
   # Clean up old hook location if present
-  OLD_HOOK="$HOME/.claude/hooks/tokenprofile-hook.sh"
+  OLD_HOOK="$HOME/.claude/hooks/toqqen-hook.sh"
   if [ -f "$OLD_HOOK" ]; then
     rm -f "$OLD_HOOK"
     echo "Cleaned up old hook at $OLD_HOOK"
@@ -153,7 +153,7 @@ echo ""
 if [ -n "$CONFIGURED" ]; then
   # Trim trailing comma and space
   CONFIGURED=\$(echo "$CONFIGURED" | sed 's/, $//')
-  echo "Done! Token Profile hook installed for: $CONFIGURED"
+  echo "Done! Toqqen hook installed for: $CONFIGURED"
 else
   echo "Done! Hook script installed at $HOOK_SCRIPT"
   echo "Note: Neither ~/.claude nor ~/.cursor directories found."

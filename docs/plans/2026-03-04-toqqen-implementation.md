@@ -1,4 +1,4 @@
-# MonMon Implementation Plan
+# Toqqen Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -19,7 +19,7 @@
 **Step 1: Create Next.js project with bun**
 
 ```bash
-cd /Users/yusuf.erdogan/work/monmon
+cd /Users/yusuf.erdogan/work/toqqen
 bunx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias="@/*" --use-bun
 ```
 
@@ -347,7 +347,7 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-6">
-        <h1 className="text-3xl font-bold">Sign in to MonMon</h1>
+        <h1 className="text-3xl font-bold">Sign in to Toqqen</h1>
         <p className="text-gray-600">Track your LLM token usage</p>
         <button
           onClick={signInWithGitHub}
@@ -1076,7 +1076,7 @@ export default function SettingsPage() {
 
   function copyHookCommand() {
     if (!profile) return;
-    const command = `curl -s -X POST https://monmon.vercel.app/api/ingest -H "Authorization: Bearer ${profile.api_key}" -H "Content-Type: application/json" -d '{"provider":"anthropic","model":"claude","total_tokens":1000}'`;
+    const command = `curl -s -X POST https://toqqen.vercel.app/api/ingest -H "Authorization: Bearer ${profile.api_key}" -H "Content-Type: application/json" -d '{"provider":"anthropic","model":"claude","total_tokens":1000}'`;
     navigator.clipboard.writeText(command);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -1202,7 +1202,7 @@ export function Nav() {
     <nav className="border-b">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="text-lg font-bold">
-          MonMon
+          Toqqen
         </Link>
         <div className="flex items-center gap-4">
           {user ? (
@@ -1255,24 +1255,24 @@ git commit -m "add navigation and landing page"
 ### Task 12: Claude Code Hook Script
 
 **Files:**
-- Create: `scripts/monmon-hook.sh`
+- Create: `scripts/toqqen-hook.sh`
 
-This script parses the Claude Code Stop hook stdin JSON, reads the transcript JSONL to extract token data, and POSTs to the MonMon API.
+This script parses the Claude Code Stop hook stdin JSON, reads the transcript JSONL to extract token data, and POSTs to the Toqqen API.
 
 **Step 1: Create the hook script**
 
 ```bash
 #!/bin/bash
-# MonMon Claude Code Stop Hook
+# Toqqen Claude Code Stop Hook
 # Add to ~/.claude/settings.json under hooks.Stop
 #
 # Reads session data from stdin (JSON with session_id, transcript_path, cwd)
-# Parses transcript for token usage and sends to MonMon API
+# Parses transcript for token usage and sends to Toqqen API
 
-MONMON_API_KEY="${MONMON_API_KEY:-}"
-MONMON_URL="${MONMON_URL:-https://monmon.vercel.app}"
+TOQQEN_API_KEY="${TOQQEN_API_KEY:-}"
+TOQQEN_URL="${TOQQEN_URL:-https://toqqen.vercel.app}"
 
-if [ -z "$MONMON_API_KEY" ]; then
+if [ -z "$TOQQEN_API_KEY" ]; then
   exit 0
 fi
 
@@ -1323,9 +1323,9 @@ if [ "$TOTAL_TOKENS" -eq 0 ]; then
   exit 0
 fi
 
-# Send to MonMon
-curl -s -X POST "$MONMON_URL/api/ingest" \
-  -H "Authorization: Bearer $MONMON_API_KEY" \
+# Send to Toqqen
+curl -s -X POST "$TOQQEN_URL/api/ingest" \
+  -H "Authorization: Bearer $TOQQEN_API_KEY" \
   -H "Content-Type: application/json" \
   -d "$(jq -n \
     --arg provider "anthropic" \
@@ -1352,7 +1352,7 @@ curl -s -X POST "$MONMON_URL/api/ingest" \
 **Step 2: Make executable**
 
 ```bash
-chmod +x scripts/monmon-hook.sh
+chmod +x scripts/toqqen-hook.sh
 ```
 
 **Step 3: Commit**
@@ -1372,7 +1372,7 @@ git commit -m "add Claude Code Stop hook script for token ingestion"
 bunx vercel link
 ```
 
-Follow prompts to create a new Vercel project named "monmon".
+Follow prompts to create a new Vercel project named "toqqen".
 
 **Step 2: Set environment variables on Vercel**
 
@@ -1391,8 +1391,8 @@ bunx vercel --prod
 **Step 4: Update Supabase redirect URLs**
 
 In Supabase Dashboard > Authentication > URL Configuration:
-- Add `https://monmon.vercel.app/auth/callback` to redirect URLs
-- Set site URL to `https://monmon.vercel.app`
+- Add `https://toqqen.vercel.app/auth/callback` to redirect URLs
+- Set site URL to `https://toqqen.vercel.app`
 
 **Step 5: Commit any vercel config**
 
@@ -1413,10 +1413,10 @@ git commit -m "add Vercel deployment configuration"
 
 **Step 2: Test ingest API**
 ```bash
-curl -X POST https://monmon.vercel.app/api/ingest \
+curl -X POST https://toqqen.vercel.app/api/ingest \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"provider":"anthropic","model":"claude-opus-4-6","input_tokens":5000,"output_tokens":2000,"total_tokens":7000,"project":"monmon"}'
+  -d '{"provider":"anthropic","model":"claude-opus-4-6","input_tokens":5000,"output_tokens":2000,"total_tokens":7000,"project":"toqqen"}'
 ```
 
 Expected: `{"success":true}`

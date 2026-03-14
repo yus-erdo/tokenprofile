@@ -227,7 +227,7 @@ git commit -m "Calculate token cost server-side using model costs config"
 ### Task 3: Update hook script to send cache tokens separately
 
 **Files:**
-- Modify: `scripts/tokenprofile-hook.sh`
+- Modify: `scripts/toqqen-hook.sh`
 
 **Step 1: Update the hook script**
 
@@ -269,7 +269,7 @@ Note: `input_tokens` sent to the server is still the total input (including cach
 **Step 2: Commit**
 
 ```bash
-git add scripts/tokenprofile-hook.sh
+git add scripts/toqqen-hook.sh
 git commit -m "Send cache tokens as separate fields in hook payload"
 ```
 

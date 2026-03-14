@@ -36,7 +36,7 @@ export function runHook(options: RunHookOptions): Promise<RunHookResult> {
   }
 
   const stdinData = JSON.stringify(modifiedEnvelope);
-  const scriptPath = path.resolve(__dirname, "../../scripts/tokenprofile-hook.sh");
+  const scriptPath = path.resolve(__dirname, "../../scripts/toqqen-hook.sh");
 
   return new Promise((resolve) => {
     const child = execFile(

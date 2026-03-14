@@ -48,7 +48,7 @@ describe("installer", () => {
 
     try {
       expect(result.exitCode).toBe(0);
-      expect(result.fileExists(".tokenprofile/hook.sh")).toBe(true);
+      expect(result.fileExists(".toqqen/hook.sh")).toBe(true);
       expect(result.fileExists(".claude/settings.json")).toBe(true);
 
       const settings = JSON.parse(result.readFile(".claude/settings.json")!);
@@ -133,7 +133,7 @@ describe("installer", () => {
   it("updates API key in shell config on re-run", async () => {
     const result = await runInstaller({
       homeFiles: {
-        ".zshrc": 'export TOKEN_PROFILE_API_KEY="old-key"\n',
+        ".zshrc": 'export TOQQEN_API_KEY="old-key"\n',
       },
       homeDirs: [".claude"],
       mockServerPort: port,
@@ -144,9 +144,9 @@ describe("installer", () => {
     try {
       expect(result.exitCode).toBe(0);
       const zshrc = result.readFile(".zshrc")!;
-      const matches = zshrc.match(/TOKEN_PROFILE_API_KEY/g);
+      const matches = zshrc.match(/TOQQEN_API_KEY/g);
       expect(matches?.length).toBe(1);
-      expect(zshrc).toContain('TOKEN_PROFILE_API_KEY="new-key-456"');
+      expect(zshrc).toContain('TOQQEN_API_KEY="new-key-456"');
       expect(zshrc).not.toContain("old-key");
       expect(result.stdout).toContain("Updated API key");
     } finally {
@@ -158,7 +158,7 @@ describe("installer", () => {
     const result = await runInstaller({
       homeDirs: [".claude"],
       homeFiles: {
-        ".claude/hooks/tokenprofile-hook.sh": "#!/bin/bash\necho old",
+        ".claude/hooks/toqqen-hook.sh": "#!/bin/bash\necho old",
       },
       mockServerPort: port,
       installerScript,
@@ -166,7 +166,7 @@ describe("installer", () => {
 
     try {
       expect(result.exitCode).toBe(0);
-      expect(result.fileExists(".claude/hooks/tokenprofile-hook.sh")).toBe(false);
+      expect(result.fileExists(".claude/hooks/toqqen-hook.sh")).toBe(false);
       expect(result.stdout).toContain("Cleaned up old hook");
     } finally {
       result.cleanup();
@@ -182,7 +182,7 @@ describe("installer", () => {
 
     try {
       expect(result.exitCode).toBe(0);
-      expect(result.fileExists(".tokenprofile/hook.sh")).toBe(true);
+      expect(result.fileExists(".toqqen/hook.sh")).toBe(true);
       expect(result.stdout).toContain("Neither");
     } finally {
       result.cleanup();

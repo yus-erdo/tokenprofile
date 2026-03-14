@@ -1,31 +1,31 @@
 #!/bin/bash
-# Token Profile Hook (Claude Code + Cursor)
-# Posts completion token usage to Token Profile API on Stop event
+# Toqqen Hook (Claude Code + Cursor)
+# Posts completion token usage to Toqqen API on Stop event
 #
 # Supported tools:
 #   - Claude Code: reads transcript for token usage data
 #   - Cursor: captures model and session info (no token data available)
 #
 # Env vars:
-#   TOKEN_PROFILE_API_KEY   - required, get from tokenprofile.app/settings
-#   TOKEN_PROFILE_URL       - optional, defaults to https://www.tokenprofile.app
-#   TOKEN_PROFILE_DEBUG     - set to 1 to log raw input, parsed stats, payload, and server response to /tmp/tokenprofile-debug/
+#   TOQQEN_API_KEY   - required, get from toqqen.app/settings
+#   TOQQEN_URL       - optional, defaults to https://www.toqqen.app
+#   TOQQEN_DEBUG     - set to 1 to log raw input, parsed stats, payload, and server response to /tmp/toqqen-debug/
 
 # Try loading env var from shell config if not already set
-if [ -z "$TOKEN_PROFILE_API_KEY" ]; then
+if [ -z "$TOQQEN_API_KEY" ]; then
   for f in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.zshrc" "$HOME/.profile"; do
     [ -f "$f" ] || continue
-    TOKEN_PROFILE_API_KEY=$(sed -n 's/.*TOKEN_PROFILE_API_KEY="\([^"]*\)".*/\1/p' "$f" 2>/dev/null | tail -1)
-    [ -n "$TOKEN_PROFILE_API_KEY" ] && break
+    TOQQEN_API_KEY=$(sed -n 's/.*TOQQEN_API_KEY="\([^"]*\)".*/\1/p' "$f" 2>/dev/null | tail -1)
+    [ -n "$TOQQEN_API_KEY" ] && break
   done
 fi
 
-if [ -z "$TOKEN_PROFILE_API_KEY" ]; then exit 0; fi
+if [ -z "$TOQQEN_API_KEY" ]; then exit 0; fi
 
-TOKEN_PROFILE_URL="${TOKEN_PROFILE_URL:-https://tokenprofile.app}"
+TOQQEN_URL="${TOQQEN_URL:-https://toqqen.app}"
 
-DEBUG="${TOKEN_PROFILE_DEBUG:-0}"
-DEBUG_DIR="/tmp/tokenprofile-debug"
+DEBUG="${TOQQEN_DEBUG:-0}"
+DEBUG_DIR="/tmp/toqqen-debug"
 
 if [ "$DEBUG" = "1" ]; then
   mkdir -p "$DEBUG_DIR"
@@ -118,8 +118,8 @@ PAYLOAD=$(jq -n \
 debug_json "Payload" "$PAYLOAD"
 
 if [ "$DEBUG" = "1" ]; then
-  RESPONSE=$(curl -s --max-time 10 -w "\n%{http_code}" -X POST "$TOKEN_PROFILE_URL/api/ingest" \
-    -H "Authorization: Bearer $TOKEN_PROFILE_API_KEY" \
+  RESPONSE=$(curl -s --max-time 10 -w "\n%{http_code}" -X POST "$TOQQEN_URL/api/ingest" \
+    -H "Authorization: Bearer $TOQQEN_API_KEY" \
     -H "Content-Type: application/json" \
     -d "$PAYLOAD")
   HTTP_CODE=$(echo "$RESPONSE" | tail -1)
@@ -127,10 +127,10 @@ if [ "$DEBUG" = "1" ]; then
   debug_log "HTTP status: $HTTP_CODE"
   debug_json "Server response" "$BODY"
   debug_log "Debug log: $LOG"
-  echo "tokenprofile: debug log at $LOG" >&2
+  echo "toqqen: debug log at $LOG" >&2
 else
-  curl -s --max-time 10 -X POST "$TOKEN_PROFILE_URL/api/ingest" \
-    -H "Authorization: Bearer $TOKEN_PROFILE_API_KEY" \
+  curl -s --max-time 10 -X POST "$TOQQEN_URL/api/ingest" \
+    -H "Authorization: Bearer $TOQQEN_API_KEY" \
     -H "Content-Type: application/json" \
     -d "$PAYLOAD" > /dev/null 2>&1
 fi

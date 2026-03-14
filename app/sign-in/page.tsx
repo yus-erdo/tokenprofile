@@ -17,7 +17,7 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-6">
-        <h1 className="text-3xl font-bold">Sign in to Token Profile</h1>
+        <h1 className="text-3xl font-bold">Sign in to Toqqen</h1>
         <p className="text-gray-600 dark:text-gray-400">Track your LLM token usage</p>
         <button
           onClick={() => signIn("github")}

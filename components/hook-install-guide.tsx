@@ -17,7 +17,7 @@ export function HookInstallGuide({ apiKey, footer }: HookInstallGuideProps) {
   const [copiedClaudeJson, setCopiedClaudeJson] = useState(false);
   const [copiedCursorJson, setCopiedCursorJson] = useState(false);
 
-  const autoCommand = `curl -fsSL https://tokenprofile.app/api/hook-script | bash -s -- "${apiKey}"`;
+  const autoCommand = `curl -fsSL https://toqqen.app/api/hook-script | bash -s -- "${apiKey}"`;
 
   const claudeManualJson = JSON.stringify(
     {
@@ -28,7 +28,7 @@ export function HookInstallGuide({ apiKey, footer }: HookInstallGuideProps) {
             hooks: [
               {
                 type: "command",
-                command: "bash ~/.tokenprofile/hook.sh",
+                command: "bash ~/.toqqen/hook.sh",
                 async: true,
               },
             ],
@@ -47,7 +47,7 @@ export function HookInstallGuide({ apiKey, footer }: HookInstallGuideProps) {
         stop: [
           {
             command: "/bin/bash",
-            args: ["~/.tokenprofile/hook.sh"],
+            args: ["~/.toqqen/hook.sh"],
           },
         ],
       },
@@ -147,16 +147,16 @@ export function HookInstallGuide({ apiKey, footer }: HookInstallGuideProps) {
                 Add to <code className="text-[11px] px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">~/.bashrc</code> or <code className="text-[11px] px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">~/.zshrc</code>:
               </p>
               <p className="text-[11px] text-gray-400 dark:text-gray-600 mb-2 ml-[22px]">
-                The hook script reads this key to authenticate with Token Profile.
+                The hook script reads this key to authenticate with Toqqen.
               </p>
               <div className="relative rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
                 <div className="bg-gray-950 p-3">
                   <code className="text-xs font-mono text-green-400">
-                    <span className="text-gray-500">export </span>TOKEN_PROFILE_API_KEY=<span className="text-amber-400">&quot;{apiKey}&quot;</span>
+                    <span className="text-gray-500">export </span>TOQQEN_API_KEY=<span className="text-amber-400">&quot;{apiKey}&quot;</span>
                   </code>
                 </div>
                 <button
-                  onClick={() => copyText(`export TOKEN_PROFILE_API_KEY="${apiKey}"`, setCopiedKey)}
+                  onClick={() => copyText(`export TOQQEN_API_KEY="${apiKey}"`, setCopiedKey)}
                   className={`absolute top-2 right-2 px-2 py-1 text-[10px] font-medium rounded transition-all duration-200 ${
                     copiedKey
                       ? "bg-green-500/20 text-green-400"
