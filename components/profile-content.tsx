@@ -16,6 +16,10 @@ import { BentoGrid } from "@/components/ui/bento-grid";
 import { BentoCard } from "@/components/ui/bento-card";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { StatCardSkeleton, CompletionItemSkeleton } from "@/components/ui/skeleton";
+import { PeakHoursChart } from "@/components/analytics/peak-hours-chart";
+import { StreakDisplay } from "@/components/analytics/streak-display";
+import { TrendsChart } from "@/components/analytics/trends-chart";
+import { ModelBreakdown } from "@/components/analytics/model-breakdown";
 
 export interface Completion {
   id: string;
@@ -315,6 +319,16 @@ export function ProfileContent({
         </div>
         <Heatmap data={heatmapData} year={year} />
       </BentoCard>
+
+      {/* Analytics — only visible to profile owner */}
+      {isOwner && (
+        <div className="space-y-8 mt-8">
+          <StreakDisplay />
+          <TrendsChart year={year} />
+          <ModelBreakdown year={year} />
+          <PeakHoursChart year={year} />
+        </div>
+      )}
 
       {/* Recent completions — only visible to profile owner */}
       {isOwner && (
