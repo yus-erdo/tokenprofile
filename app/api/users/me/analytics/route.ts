@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { adminDb } from '@/lib/firebase/admin'
 
-function getWeekKey(date: Date): string {
-  const d = new Date(date)
+function getWeekKey(dateStr: string): string {
+  const d = new Date(dateStr)
   d.setUTCDate(d.getUTCDate() - d.getUTCDay())
   return d.toISOString().slice(0, 10)
 }
 
-function getMonthKey(date: Date): string {
-  return date.toISOString().slice(0, 7)
+function getMonthKey(dateStr: string): string {
+  return dateStr.slice(0, 7)
 }
 
 export async function GET(req: Request) {
@@ -23,16 +23,14 @@ export async function GET(req: Request) {
     const year = parseInt(url.searchParams.get('year') || String(new Date().getFullYear()))
     const granularity = url.searchParams.get('granularity') || 'week'
 
-    const startOfYear = new Date(year, 0, 1)
-    const endOfYear = new Date(year + 1, 0, 1)
-
-    // Single query for all analytics
+    // Read pre-aggregated daily stats instead of all events
     const snapshot = await adminDb
-      .collection('events')
-      .where('userId', '==', session.user.firestoreId)
-      .where('timestamp', '>=', startOfYear)
-      .where('timestamp', '<', endOfYear)
-      .orderBy('timestamp', 'asc')
+      .collection('userStats')
+      .doc(session.user.firestoreId)
+      .collection('daily')
+      .where('date', '>=', `${year}-01-01`)
+      .where('date', '<=', `${year}-12-31`)
+      .orderBy('date', 'asc')
       .get()
 
     // Peak hours
@@ -47,46 +45,58 @@ export async function GET(req: Request) {
     let totalTokens = 0
 
     // Streaks
-    const activeDatesSet = new Set<string>()
+    const activeDates: string[] = []
 
     for (const doc of snapshot.docs) {
       const data = doc.data()
-      const date = data.timestamp.toDate()
-      const tokens = data.totalTokens || 0
-      const cost = data.costUsd || 0
+      const dateStr = data.date as string
+      const tokens = data.tokens || 0
+      const cost = data.cost || 0
+      const completions = data.completions || 0
+      const dayOfWeek = data.dayOfWeek ?? new Date(dateStr).getUTCDay()
 
-      // Peak hours
-      const hour = date.getUTCHours()
-      const day = date.getUTCDay()
-      hourly[hour].completions++
-      hourly[hour].tokens += tokens
-      hourly[hour].cost += cost
-      daily[day].completions++
-      daily[day].tokens += tokens
-      daily[day].cost += cost
+      // Peak hours — aggregate from hourly buckets
+      const hours = data.hours as Record<string, number> | undefined
+      if (hours) {
+        for (const [h, count] of Object.entries(hours)) {
+          const hi = parseInt(h)
+          hourly[hi].completions += count
+        }
+      }
+
+      // Day of week
+      daily[dayOfWeek].completions += completions
+      daily[dayOfWeek].tokens += tokens
+      daily[dayOfWeek].cost += cost
 
       // Trends
-      const trendKey = granularity === 'month' ? getMonthKey(date) : getWeekKey(date)
+      const trendKey = granularity === 'month' ? getMonthKey(dateStr) : getWeekKey(dateStr)
       const existing = trendBuckets.get(trendKey) || { tokens: 0, cost: 0, completions: 0 }
       existing.tokens += tokens
       existing.cost += cost
-      existing.completions++
+      existing.completions += completions
       trendBuckets.set(trendKey, existing)
 
       // Models
-      const model = data.model || 'unknown'
-      const modelExisting = modelMap.get(model) || { tokens: 0, cost: 0, completions: 0 }
-      modelExisting.tokens += tokens
-      modelExisting.cost += cost
-      modelExisting.completions++
+      const models = data.models as Record<string, number> | undefined
+      const modelTokens = data.modelTokens as Record<string, number> | undefined
+      const modelCost = data.modelCost as Record<string, number> | undefined
+      if (models) {
+        for (const [model, count] of Object.entries(models)) {
+          const m = modelMap.get(model) || { tokens: 0, cost: 0, completions: 0 }
+          m.completions += count
+          m.tokens += modelTokens?.[model] || 0
+          m.cost += modelCost?.[model] || 0
+          modelMap.set(model, m)
+        }
+      }
       totalTokens += tokens
-      modelMap.set(model, modelExisting)
 
       // Streaks
-      activeDatesSet.add(date.toISOString().slice(0, 10))
+      if (completions > 0) activeDates.push(dateStr)
     }
 
-    // Compute trend periods with change
+    // Compute trend periods
     const periods = Array.from(trendBuckets.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([period, stats], i, arr) => {
@@ -102,8 +112,8 @@ export async function GET(req: Request) {
         }
       })
 
-    // Compute models with percentages
-    const models = Array.from(modelMap.entries())
+    // Models with percentages
+    const modelsResult = Array.from(modelMap.entries())
       .map(([model, stats]) => ({
         model,
         ...stats,
@@ -111,28 +121,27 @@ export async function GET(req: Request) {
       }))
       .sort((a, b) => b.tokens - a.tokens)
 
-    // Compute streaks
-    const activeDates = Array.from(activeDatesSet).sort().reverse()
+    // Streaks
+    const sortedDates = activeDates.sort().reverse()
     let currentStreak = 0
-    let longestStreak = activeDates.length > 0 ? 1 : 0
+    let longestStreak = sortedDates.length > 0 ? 1 : 0
     let streak = 1
 
-    if (activeDates.length > 0) {
+    if (sortedDates.length > 0) {
       const today = new Date().toISOString().slice(0, 10)
       const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-      const startDate = activeDates[0] === today || activeDates[0] === yesterday ? activeDates[0] : null
+      const startDate = sortedDates[0] === today || sortedDates[0] === yesterday ? sortedDates[0] : null
 
       if (startDate) {
-        for (let i = 0; i < activeDates.length; i++) {
+        for (let i = 0; i < sortedDates.length; i++) {
           const expected = new Date(startDate)
           expected.setDate(expected.getDate() - i)
-          if (activeDates[i] === expected.toISOString().slice(0, 10)) {
-            currentStreak++
-          } else break
+          if (sortedDates[i] === expected.toISOString().slice(0, 10)) currentStreak++
+          else break
         }
       }
 
-      const sortedAsc = [...activeDates].reverse()
+      const sortedAsc = [...sortedDates].reverse()
       for (let i = 1; i < sortedAsc.length; i++) {
         const prev = new Date(sortedAsc[i - 1])
         const curr = new Date(sortedAsc[i])
@@ -148,7 +157,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       peakHours: { hourly, daily },
       trends: { periods, granularity },
-      models: { models, totalTokens },
+      models: { models: modelsResult, totalTokens },
       streaks: { currentStreak, longestStreak, totalActiveDays: activeDates.length },
       year,
     })

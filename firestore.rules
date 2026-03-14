@@ -12,5 +12,8 @@ service cloud.firestore {
     match /config/{docId} {
       allow read: if true;
     }
+    match /userStats/{userId}/{document=**} {
+      allow read: if true;
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { adminDb } from "@/lib/firebase/admin";
 import { getModelCosts, calculateCost } from "@/lib/firebase/model-costs";
 import { rateLimiter } from "@/lib/rate-limit";
+import { updateDailyStats } from "@/lib/firebase/update-daily-stats";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -60,26 +61,38 @@ export async function POST(request: Request) {
     costUsd = Number(body.cost_usd) || 0;
   }
 
-  await adminDb.collection("events").add({
-    userId: userDoc.id,
-    event: body.event || "Stop",
-    source: (body.source as string) || "claude-code",
-    provider: body.provider || null,
-    model,
-    inputTokens,
-    outputTokens,
-    cacheCreationTokens,
-    cacheReadTokens,
-    totalTokens,
-    costUsd,
-    project: body.project || null,
-    durationSeconds: body.duration_seconds || null,
-    numTurns: body.num_turns || null,
-    toolsUsed: body.tools_used || {},
-    metadata: body.metadata || {},
-    timestamp: body.timestamp ? new Date(body.timestamp as string) : new Date(),
-    createdAt: new Date(),
-  });
+  const timestamp = body.timestamp ? new Date(body.timestamp as string) : new Date();
+
+  // Write event and update daily stats in parallel
+  await Promise.all([
+    adminDb.collection("events").add({
+      userId: userDoc.id,
+      event: body.event || "Stop",
+      source: (body.source as string) || "claude-code",
+      provider: body.provider || null,
+      model,
+      inputTokens,
+      outputTokens,
+      cacheCreationTokens,
+      cacheReadTokens,
+      totalTokens,
+      costUsd,
+      project: body.project || null,
+      durationSeconds: body.duration_seconds || null,
+      numTurns: body.num_turns || null,
+      toolsUsed: body.tools_used || {},
+      metadata: body.metadata || {},
+      timestamp,
+      createdAt: new Date(),
+    }),
+    updateDailyStats({
+      userId: userDoc.id,
+      model,
+      totalTokens,
+      costUsd,
+      timestamp,
+    }),
+  ]);
 
   return NextResponse.json({ success: true });
 }
