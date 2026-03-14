@@ -379,6 +379,70 @@ describe("installer", () => {
     }
   });
 
+  it("fails with error when no API key and no TTY", async () => {
+    const result = await runInstaller({
+      homeDirs: [".claude"],
+      mockServerPort: port,
+      installerScript,
+      skipApiKey: true,
+    });
+
+    try {
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("API key is required");
+      expect(result.stderr).toContain("Usage:");
+      expect(result.fileExists(".toqqen/hook.sh")).toBe(false);
+    } finally {
+      result.cleanup();
+    }
+  });
+
+  it("prompts for API key interactively via TTY", async () => {
+    const result = await runInstaller({
+      homeDirs: [".claude"],
+      homeFiles: { ".zshrc": "" },
+      mockServerPort: port,
+      installerScript,
+      skipApiKey: true,
+      ttyInput: "tty-key-789\n",
+    });
+
+    try {
+      expect(result.exitCode).toBe(0);
+      expect(result.fileExists(".toqqen/hook.sh")).toBe(true);
+
+      // API key from TTY should be saved in shell config
+      const zshrc = result.readFile(".zshrc");
+      expect(zshrc).toContain('TOQQEN_API_KEY="tty-key-789"');
+
+      // Welcome message should appear
+      expect(result.stdout).toContain("Welcome to toqqen");
+      expect(result.stdout).toContain("toqqen.dev/settings");
+    } finally {
+      result.cleanup();
+    }
+  });
+
+  it("prefers CLI argument over TTY when both available", async () => {
+    const result = await runInstaller({
+      homeDirs: [".claude"],
+      homeFiles: { ".zshrc": "" },
+      mockServerPort: port,
+      installerScript,
+      apiKey: "cli-key-abc",
+      ttyInput: "tty-key-xyz\n",
+    });
+
+    try {
+      expect(result.exitCode).toBe(0);
+      const zshrc = result.readFile(".zshrc");
+      expect(zshrc).toContain('TOQQEN_API_KEY="cli-key-abc"');
+      expect(zshrc).not.toContain("tty-key-xyz");
+    } finally {
+      result.cleanup();
+    }
+  });
+
   it("is idempotent on re-run", async () => {
     // First run
     const result1 = await runInstaller({
