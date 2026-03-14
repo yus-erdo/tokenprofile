@@ -18,11 +18,16 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
 
   // Fetch user by username
-  const usersSnapshot = await adminDb
-    .collection("users")
-    .where("username", "==", username)
-    .limit(1)
-    .get();
+  let usersSnapshot;
+  try {
+    usersSnapshot = await adminDb
+      .collection("users")
+      .where("username", "==", username)
+      .limit(1)
+      .get();
+  } catch {
+    notFound();
+  }
 
   if (usersSnapshot.empty) notFound();
 
