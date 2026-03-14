@@ -19,35 +19,23 @@ export function StreakDisplay() {
 
   if (!data) return null
 
+  const items = [
+    { label: 'current streak', value: `${data.currentStreak}d` },
+    { label: 'longest streak', value: `${data.longestStreak}d` },
+    { label: 'active days', value: String(data.totalActiveDays) },
+  ]
+
   return (
-    <div className="flex gap-4">
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
-        <span className="text-lg" role="img" aria-label="fire">&#x1F525;</span>
-        <div>
-          <p className="text-xl font-bold font-mono text-orange-600 dark:text-orange-400">
-            {data.currentStreak}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Current Streak</p>
+    <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+      {items.map((item, i) => (
+        <div
+          key={item.label}
+          className={`flex items-center justify-between px-4 py-2.5 ${i !== 0 ? 'border-t border-gray-100 dark:border-gray-800/50' : ''}`}
+        >
+          <span className="text-xs font-mono-accent text-gray-500 dark:text-gray-500">{item.label}</span>
+          <span className="text-sm font-mono-accent font-bold text-gray-900 dark:text-gray-100">{item.value}</span>
         </div>
-      </div>
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800">
-        <span className="text-lg" role="img" aria-label="trophy">&#x1F3C6;</span>
-        <div>
-          <p className="text-xl font-bold font-mono text-yellow-600 dark:text-yellow-400">
-            {data.longestStreak}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Longest Streak</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-        <span className="text-lg" role="img" aria-label="calendar">&#x1F4C5;</span>
-        <div>
-          <p className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400">
-            {data.totalActiveDays}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Active Days</p>
-        </div>
-      </div>
+      ))}
     </div>
   )
 }

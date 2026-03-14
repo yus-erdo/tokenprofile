@@ -24,49 +24,60 @@ export function TrendsChart({ year }: { year: number }) {
       .finally(() => setLoading(false))
   }, [granularity, year])
 
-  if (loading) return <div className="h-64 animate-pulse bg-muted rounded-lg" />
+  if (loading) return <div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-900 rounded-lg" />
 
   const options: ApexCharts.ApexOptions = {
-    chart: { type: 'area', height: 300, stacked: false },
-    stroke: { curve: 'smooth', width: 2 },
+    chart: { type: 'area', height: 260 },
+    stroke: { curve: 'straight', width: 1.5 },
     xaxis: {
       categories: data.map(d => d.period),
-      labels: { rotate: -45, style: { fontSize: '11px' } },
     },
     yaxis: [
-      { title: { text: 'Tokens' }, labels: { formatter: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v) } },
-      { opposite: true, title: { text: 'Completions' } },
+      {
+        title: { text: 'tokens' },
+        labels: {
+          formatter: (v: number) => {
+            if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}m`
+            if (v >= 1_000) return `${(v / 1_000).toFixed(0)}k`
+            return String(v)
+          },
+        },
+      },
+      {
+        opposite: true,
+        title: { text: 'completions' },
+      },
     ],
     dataLabels: { enabled: false },
-    fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
+    fill: { type: 'gradient', gradient: { opacityFrom: 0.15, opacityTo: 0.0 } },
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Usage Trends</h3>
+        <h3 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">~ usage trends</h3>
         <div className="flex gap-1 text-xs">
           <button
             onClick={() => setGranularity('week')}
-            className={`px-2 py-1 rounded ${granularity === 'week' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+            className={`px-2 py-1 rounded font-mono-accent press-effect ${granularity === 'week' ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
           >
-            Weekly
+            weekly
           </button>
           <button
             onClick={() => setGranularity('month')}
-            className={`px-2 py-1 rounded ${granularity === 'month' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+            className={`px-2 py-1 rounded font-mono-accent press-effect ${granularity === 'month' ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
           >
-            Monthly
+            monthly
           </button>
         </div>
       </div>
       <ChartWrapper
         type="area"
-        height={300}
+        height={260}
         options={options}
         series={[
-          { name: 'Tokens', data: data.map(d => d.tokens) },
-          { name: 'Completions', data: data.map(d => d.completions) },
+          { name: 'tokens', data: data.map(d => d.tokens) },
+          { name: 'completions', data: data.map(d => d.completions) },
         ]}
       />
     </div>

@@ -7,6 +7,8 @@ import type { Props as ApexChartProps } from 'react-apexcharts'
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
+const MONO_FONT = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
+
 interface ChartWrapperProps extends Omit<ApexChartProps, 'options'> {
   options: ApexCharts.ApexOptions
 }
@@ -32,14 +34,51 @@ export function ChartWrapper({ options, ...props }: ChartWrapperProps) {
       background: 'transparent',
       toolbar: { show: false, ...options.chart?.toolbar },
       foreColor: colors.foreground,
+      fontFamily: MONO_FONT,
     },
     grid: {
       borderColor: colors.gridLine,
+      strokeDashArray: 3,
       ...options.grid,
     },
     tooltip: {
       theme: isDark ? 'dark' : 'light',
+      style: { fontFamily: MONO_FONT, fontSize: '11px' },
       ...options.tooltip,
+    },
+    xaxis: {
+      ...options.xaxis,
+      labels: {
+        ...options.xaxis?.labels,
+        style: {
+          fontFamily: MONO_FONT,
+          fontSize: '10px',
+          colors: colors.muted,
+          ...options.xaxis?.labels?.style,
+        },
+      },
+      axisBorder: { color: colors.gridLine, ...options.xaxis?.axisBorder },
+      axisTicks: { color: colors.gridLine, ...options.xaxis?.axisTicks },
+    },
+    yaxis: Array.isArray(options.yaxis) ? options.yaxis.map(y => ({
+      ...y,
+      labels: {
+        ...y.labels,
+        style: { fontFamily: MONO_FONT, fontSize: '10px', colors: [colors.muted] },
+      },
+      title: y.title ? { ...y.title, style: { fontFamily: MONO_FONT, fontSize: '10px', color: colors.muted } } : undefined,
+    })) : options.yaxis ? {
+      ...options.yaxis,
+      labels: {
+        ...(options.yaxis as ApexYAxis).labels,
+        style: { fontFamily: MONO_FONT, fontSize: '10px', colors: [colors.muted] },
+      },
+    } : undefined,
+    legend: {
+      fontFamily: MONO_FONT,
+      fontSize: '11px',
+      labels: { colors: colors.muted },
+      ...options.legend,
     },
     colors: options.colors || [...colors.series],
   }

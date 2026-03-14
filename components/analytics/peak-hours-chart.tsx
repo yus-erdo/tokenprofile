@@ -19,48 +19,51 @@ export function PeakHoursChart({ year }: { year: number }) {
       .finally(() => setLoading(false))
   }, [year])
 
-  if (loading || !data) return <div className="h-64 animate-pulse bg-muted rounded-lg" />
+  if (loading || !data) return <div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-900 rounded-lg" />
 
   const hourLabels = Array.from({ length: 24 }, (_, i) =>
-    i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i - 12}pm`
+    i === 0 ? '0' : i < 10 ? `${i}` : `${i}`
   )
 
-  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const dayLabels = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
   const hourlyOptions: ApexCharts.ApexOptions = {
-    chart: { type: 'bar', height: 280 },
-    plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
-    xaxis: { categories: hourLabels, labels: { rotate: -45, style: { fontSize: '11px' } } },
-    yaxis: { title: { text: 'Completions' } },
+    chart: { type: 'bar', height: 220 },
+    plotOptions: { bar: { borderRadius: 2, columnWidth: '70%' } },
+    xaxis: { categories: hourLabels },
+    yaxis: { title: { text: '' } },
     dataLabels: { enabled: false },
   }
 
   const dailyOptions: ApexCharts.ApexOptions = {
-    chart: { type: 'bar', height: 220 },
-    plotOptions: { bar: { borderRadius: 4, horizontal: true } },
-    xaxis: { categories: dayLabels },
-    yaxis: { title: { text: '' } },
+    chart: { type: 'bar', height: 180 },
+    plotOptions: { bar: { borderRadius: 2, horizontal: true, barHeight: '60%' } },
+    xaxis: {},
+    yaxis: { labels: { style: { fontSize: '10px' } } },
     dataLabels: { enabled: false },
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Activity by Hour</h3>
-        <ChartWrapper
-          type="bar"
-          height={280}
-          options={hourlyOptions}
-          series={[{ name: 'Completions', data: data.hourly.map(h => h.completions) }]}
-        />
-      </div>
-      <div>
-        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Activity by Day</h3>
+        <h3 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent mb-2">~ activity by hour</h3>
         <ChartWrapper
           type="bar"
           height={220}
-          options={dailyOptions}
-          series={[{ name: 'Completions', data: data.daily.map(d => d.completions) }]}
+          options={hourlyOptions}
+          series={[{ name: 'completions', data: data.hourly.map(h => h.completions) }]}
+        />
+      </div>
+      <div>
+        <h3 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent mb-2">~ activity by day</h3>
+        <ChartWrapper
+          type="bar"
+          height={180}
+          options={{
+            ...dailyOptions,
+            xaxis: { ...dailyOptions.xaxis, categories: dayLabels },
+          }}
+          series={[{ name: 'completions', data: data.daily.map(d => d.completions) }]}
         />
       </div>
     </div>

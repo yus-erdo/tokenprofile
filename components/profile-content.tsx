@@ -322,10 +322,10 @@ export function ProfileContent({
 
       {/* Analytics — only visible to profile owner */}
       {isOwner && (
-        <div className="space-y-8 mt-8">
+        <div className="space-y-6 mb-6">
           <StreakDisplay />
-          <TrendsChart year={year} />
           <ModelBreakdown year={year} />
+          <TrendsChart year={year} />
           <PeakHoursChart year={year} />
         </div>
       )}

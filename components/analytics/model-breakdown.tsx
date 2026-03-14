@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ChartWrapper } from '@/lib/charts/apex-wrapper'
 
 interface ModelData {
   model: string
@@ -22,61 +21,29 @@ export function ModelBreakdown({ year }: { year: number }) {
       .finally(() => setLoading(false))
   }, [year])
 
-  if (loading) return <div className="h-64 animate-pulse bg-muted rounded-lg" />
+  if (loading) return <div className="h-32 animate-pulse bg-gray-100 dark:bg-gray-900 rounded-lg" />
   if (models.length === 0) return null
 
-  const formatModel = (m: string) => m.replace('claude-', '').replace(/-/g, ' ')
-
-  const donutOptions: ApexCharts.ApexOptions = {
-    chart: { type: 'donut', height: 280 },
-    labels: models.map(m => formatModel(m.model)),
-    legend: { position: 'bottom', fontSize: '12px' },
-    plotOptions: {
-      pie: {
-        donut: {
-          size: '60%',
-          labels: {
-            show: true,
-            total: {
-              show: true,
-              label: 'Total',
-              formatter: () => models.reduce((sum, m) => sum + m.completions, 0).toLocaleString(),
-            },
-          },
-        },
-      },
-    },
-    dataLabels: { enabled: false },
-  }
-
   return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Model Usage</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ChartWrapper
-          type="donut"
-          height={280}
-          options={donutOptions}
-          series={models.map(m => m.completions)}
-        />
-        <div className="space-y-2">
-          {models.map(m => (
-            <div key={m.model} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-              <div>
-                <p className="text-sm font-medium">{formatModel(m.model)}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                  {m.completions} completions
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-mono">{m.tokens.toLocaleString()} tokens</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                  ${m.cost.toFixed(2)} · {m.percentage.toFixed(1)}%
-                </p>
-              </div>
+    <div>
+      <h3 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent mb-3">~ models</h3>
+      <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+        {models.map((m, i) => (
+          <div
+            key={m.model}
+            className={`flex items-center justify-between px-4 py-2.5 ${i !== 0 ? 'border-t border-gray-100 dark:border-gray-800/50' : ''}`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-xs font-mono-accent font-medium text-gray-900 dark:text-gray-100 truncate">{m.model}</span>
+              <span className="text-xs font-mono-accent text-gray-400 dark:text-gray-600">{m.completions} runs</span>
             </div>
-          ))}
-        </div>
+            <div className="flex items-center gap-4 shrink-0">
+              <span className="text-xs font-mono-accent text-gray-700 dark:text-gray-300">{m.tokens.toLocaleString()} <span className="text-gray-400 dark:text-gray-600">tok</span></span>
+              <span className="text-xs font-mono-accent text-gray-700 dark:text-gray-300">${m.cost.toFixed(2)}</span>
+              <span className="text-xs font-mono-accent text-gray-400 dark:text-gray-600 w-12 text-right">{m.percentage.toFixed(1)}%</span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
