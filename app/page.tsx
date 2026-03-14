@@ -239,7 +239,7 @@ function GitHubButton({ large = false }: { large?: boolean }) {
 
   function handleClick() {
     setLoading(true);
-    signIn("github");
+    signIn("github", { redirectTo: "/auth/callback" });
   }
 
   return (
