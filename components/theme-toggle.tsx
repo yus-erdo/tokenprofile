@@ -6,7 +6,11 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   const isDark = theme === "dark";
-  const next = () => setTheme(isDark ? "light" : "dark");
+  const next = () => {
+    document.documentElement.classList.add('transitioning');
+    setTimeout(() => document.documentElement.classList.remove('transitioning'), 350);
+    setTheme(isDark ? "light" : "dark");
+  };
   const Icon = isDark ? MoonIcon : SunIcon;
 
   return (

@@ -12,6 +12,10 @@ import {
 import { useSession } from "next-auth/react";
 import { db } from "@/lib/firebase/client";
 import { Heatmap } from "@/components/heatmap";
+import { BentoGrid } from "@/components/ui/bento-grid";
+import { BentoCard } from "@/components/ui/bento-card";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { StatCardSkeleton, CompletionItemSkeleton } from "@/components/ui/skeleton";
 
 export interface Completion {
   id: string;
@@ -231,66 +235,78 @@ export function ProfileContent({
   }, [userId, year, flashHighlights]);
 
   return (
-    <div className="flex-1 min-w-0">
+    <div className="flex-1 min-w-0 dot-grid-bg">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Completions</div>
-          <div className="flex items-baseline justify-between">
-            <div>
-              <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{todayCompletions}</div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">today</div>
+      <BentoGrid cols={2} className="mb-6">
+        <BentoCard>
+          <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3 font-mono-accent">~ completions</div>
+          <div className="flex items-end justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-2xl font-bold font-mono-accent text-gray-900 dark:text-gray-100 truncate" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+                <AnimatedCounter value={todayCompletions} />
+              </div>
+              <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent mt-1">today</div>
             </div>
-            <div className="text-right">
-              <div className="text-lg text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{completionCount}</div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">{year}</div>
-            </div>
-          </div>
-        </div>
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Tokens</div>
-          <div className="flex items-baseline justify-between">
-            <div>
-              <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{formatTokens(todayTokens)}</div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">today</div>
-            </div>
-            <div className="text-right">
-              <div className="text-lg text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{formatTokens(totalTokens)}</div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">{year}</div>
+            <div className="text-right shrink-0">
+              <div className="text-sm font-mono-accent text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+                <AnimatedCounter value={completionCount} />
+              </div>
+              <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent">{year}</div>
             </div>
           </div>
-        </div>
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Estimated Cost</div>
-          <div className="flex items-baseline justify-between">
-            <div>
-              <div className="text-2xl font-bold" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>${todayCost.toFixed(2)}</div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">today</div>
+        </BentoCard>
+        <BentoCard>
+          <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3 font-mono-accent">~ tokens</div>
+          <div className="flex items-end justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-2xl font-bold font-mono-accent text-gray-900 dark:text-gray-100 truncate" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+                <AnimatedCounter value={todayTokens} format={formatTokens} />
+              </div>
+              <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent mt-1">today</div>
             </div>
-            <div className="text-right">
-              <div className="text-lg text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>${totalCost.toFixed(2)}</div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">{year}</div>
+            <div className="text-right shrink-0">
+              <div className="text-sm font-mono-accent text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+                <AnimatedCounter value={totalTokens} format={formatTokens} />
+              </div>
+              <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent">{year}</div>
             </div>
           </div>
-        </div>
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-          <div className="text-2xl font-bold truncate text-sm" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{favoriteModel}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">Top Model</div>
-        </div>
-      </div>
+        </BentoCard>
+        <BentoCard>
+          <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3 font-mono-accent">~ est. cost</div>
+          <div className="flex items-end justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-2xl font-bold font-mono-accent text-gray-900 dark:text-gray-100 truncate" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+                <AnimatedCounter value={todayCost} format={(v) => `$${v.toFixed(0)}`} />
+              </div>
+              <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent mt-1">today</div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-sm font-mono-accent text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+                <AnimatedCounter value={totalCost} format={(v) => `$${v.toFixed(0)}`} />
+              </div>
+              <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent">{year}</div>
+            </div>
+          </div>
+        </BentoCard>
+        <BentoCard>
+          <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3 font-mono-accent">~ top model</div>
+          <div className="text-sm font-bold truncate font-mono-accent text-gray-900 dark:text-gray-100" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{favoriteModel}</div>
+        </BentoCard>
+      </BentoGrid>
 
       {/* Heatmap */}
-      <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 mb-6">
+      <BentoCard className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {totalTokens.toLocaleString()} tokens in {year}
+          <h2 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">
+            ~ <span>{totalTokens.toLocaleString()}</span> tokens in {year}
           </h2>
           <div className="flex gap-1">
             {years.map((y) => (
               <a
                 key={y}
                 href={`/${username}?year=${y}`}
-                className={`px-2 py-1 text-xs rounded ${y === year ? "bg-blue-500 text-white" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                className={`px-2 py-1 text-xs rounded font-mono-accent press-effect ${y === year ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
               >
                 {y}
               </a>
@@ -298,32 +314,32 @@ export function ProfileContent({
           </div>
         </div>
         <Heatmap data={heatmapData} year={year} />
-      </div>
+      </BentoCard>
 
       {/* Recent completions — only visible to profile owner */}
       {isOwner && (
         <>
-          <h2 className="text-lg font-semibold mb-3">Recent Completions</h2>
-          <div className="space-y-2">
-            {completions.slice(0, 20).map((s) => (
+          <h2 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 font-mono-accent mb-3">Recent Completions</h2>
+          <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+            {completions.slice(0, 20).map((s, i) => (
               <div
                 key={s.id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3 text-sm gap-2 sm:gap-3"
+                className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-3 text-sm gap-2 sm:gap-3 ${i !== 0 ? 'border-t border-gray-100 dark:border-gray-800/50' : ''}`}
                 style={highlightedIds.has(s.id) ? ROW_HIGHLIGHTED_STYLE : ROW_BASE_STYLE}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="font-medium truncate">{s.model || "unknown"}</span>
-                  <span className="text-gray-400 dark:text-gray-500 shrink-0">{s.provider}</span>
+                  <span className="font-medium font-mono-accent text-gray-900 dark:text-gray-100 truncate text-xs">{s.model || "unknown"}</span>
+                  <span className="text-gray-400 dark:text-gray-600 shrink-0 text-xs font-mono-accent">{s.provider}</span>
                   {s.project && (
-                    <span className="text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded shrink-0">
+                    <span className="text-xs font-mono-accent text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded shrink-0 border border-emerald-200 dark:border-emerald-800/50">
                       {s.project}
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-gray-500 dark:text-gray-400 shrink-0">
-                  <span>{(s.totalTokens || 0).toLocaleString()} tokens</span>
-                  <span>${Number(s.costUsd || 0).toFixed(4)}</span>
-                  <span>{new Date(s.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                <div className="flex items-center gap-4 shrink-0">
+                  <span className="font-mono-accent text-xs text-gray-700 dark:text-gray-300">{(s.totalTokens || 0).toLocaleString()} <span className="text-gray-400 dark:text-gray-600">tok</span></span>
+                  <span className="font-mono-accent text-xs text-gray-700 dark:text-gray-300">${Number(s.costUsd || 0).toFixed(4)}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent">{new Date(s.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                 </div>
               </div>
             ))}

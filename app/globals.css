@@ -68,3 +68,55 @@ button, [role="button"], a, summary, select, label[for], input[type="checkbox"],
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
+
+/* Dot grid background */
+.dot-grid-bg {
+  background-image: radial-gradient(circle, currentColor 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+  color: rgb(0 0 0 / 0.06);
+}
+
+.dark .dot-grid-bg {
+  color: rgb(255 255 255 / 0.04);
+}
+
+/* Smooth theme transitions */
+html.transitioning,
+html.transitioning *,
+html.transitioning *::before,
+html.transitioning *::after {
+  transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease, box-shadow 300ms ease !important;
+}
+
+/* Monospace accent class */
+.font-mono-accent {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Button press micro-interaction */
+.press-effect {
+  transition: transform 100ms ease;
+}
+.press-effect:active {
+  transform: scale(0.97);
+}
+
+/* Tab underline slide */
+.tab-underline {
+  position: relative;
+}
+.tab-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transition: transform 200ms ease;
+}
+.tab-underline[data-active='true']::after {
+  transform: scaleX(1);
+}
