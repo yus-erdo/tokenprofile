@@ -40,6 +40,30 @@ export async function GET(
   const favoriteModel =
     Object.entries(modelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
+  // Calculate streak data
+  const activeDatesSet = new Set<string>();
+  sessionsSnapshot.docs.forEach((doc) => {
+    const ts = doc.data().timestamp?.toDate();
+    if (ts) activeDatesSet.add(ts.toISOString().slice(0, 10));
+  });
+  const activeDates = Array.from(activeDatesSet).sort().reverse();
+
+  let currentStreak = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const startDate =
+    activeDates[0] === today || activeDates[0] === yesterday
+      ? activeDates[0]
+      : null;
+  if (startDate) {
+    for (let i = 0; i < activeDates.length; i++) {
+      const expected = new Date(startDate);
+      expected.setDate(expected.getDate() - i);
+      if (activeDates[i] === expected.toISOString().slice(0, 10)) currentStreak++;
+      else break;
+    }
+  }
+
   return NextResponse.json({
     username: userData.username,
     displayName: userData.displayName,
@@ -51,6 +75,7 @@ export async function GET(
       totalCost,
       completionCount: sessionsSnapshot.size,
       favoriteModel,
+      currentStreak,
     },
   });
 }
