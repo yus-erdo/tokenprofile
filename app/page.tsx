@@ -127,7 +127,13 @@ function ScrollReveal({
 
 // --- Heatmap Grid ---
 function HeroHeatmap() {
-  const [grid] = useState(() => generateHeatmapData(7, 20));
+  const [grid, setGrid] = useState<number[][] | null>(null);
+
+  useEffect(() => {
+    setGrid(generateHeatmapData(7, 20));
+  }, []);
+
+  if (!grid) return <div className="h-[85px] md:h-[112px]" />;
 
   return (
     <div className="flex gap-[3px] justify-center">
@@ -177,7 +183,14 @@ function CopyInstallCommand({ command }: { command: string }) {
 
 // --- Mini Heatmap Fragment ---
 function MiniHeatmap({ rows = 4, cols = 8 }: { rows?: number; cols?: number }) {
-  const [grid] = useState(() => generateHeatmapData(rows, cols));
+  const [grid, setGrid] = useState<number[][] | null>(null);
+
+  useEffect(() => {
+    setGrid(generateHeatmapData(rows, cols));
+  }, [rows, cols]);
+
+  if (!grid) return <div style={{ height: rows * 10, width: cols * 10 }} />;
+
   return (
     <div className="flex gap-[2px]">
       {grid[0].map((_, colIdx) => (
