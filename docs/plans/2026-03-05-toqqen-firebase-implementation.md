@@ -1151,7 +1151,7 @@ git commit -m "add navigation and landing page"
 # Parses transcript for token usage and sends to Toqqen API
 
 TOQQEN_API_KEY="${TOQQEN_API_KEY:-}"
-TOQQEN_URL="${TOQQEN_URL:-https://www.toqqen.app}"
+TOQQEN_URL="${TOQQEN_URL:-https://www.toqqen.dev}"
 
 if [ -z "$TOQQEN_API_KEY" ]; then
   exit 0
@@ -1269,7 +1269,7 @@ git commit -m "add Vercel deployment configuration"
 
 **Step 2: Test ingest API**
 ```bash
-curl -X POST https://www.toqqen.app/api/ingest \
+curl -X POST https://www.toqqen.dev/api/ingest \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"provider":"anthropic","model":"claude-opus-4-6","input_tokens":5000,"output_tokens":2000,"total_tokens":7000,"project":"toqqen"}'

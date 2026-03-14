@@ -57,7 +57,7 @@ export function runInstaller(options: RunInstallerOptions): Promise<RunInstaller
 
   // Replace the download URL in the installer script to point at mock server
   let modifiedScript = installerScript.replace(
-    /curl -fsSL "https:\/\/toqqen\.app\/scripts\/toqqen-hook\.sh"/,
+    /curl -fsSL "https:\/\/toqqen\.dev\/scripts\/toqqen-hook\.sh"/,
     `curl -fsSL "http://localhost:${mockServerPort}/scripts/toqqen-hook.sh"`
   );
 

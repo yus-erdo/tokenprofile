@@ -14,7 +14,7 @@ echo "Installing Toqqen hook..."
 mkdir -p "$HOOK_DIR"
 
 # 2. Download hook script
-curl -fsSL "https://toqqen.app/scripts/toqqen-hook.sh" -o "$HOOK_SCRIPT"
+curl -fsSL "https://toqqen.dev/scripts/toqqen-hook.sh" -o "$HOOK_SCRIPT"
 chmod +x "$HOOK_SCRIPT"
 
 # 3. Add API key to shell config

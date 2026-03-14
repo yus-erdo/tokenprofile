@@ -397,7 +397,7 @@ function StepInstallHook({ apiKey, userId, onContinue }: { apiKey: string; userI
   const [copiedJson, setCopiedJson] = useState(false);
 
   // One-liner that downloads the hook script and configures Claude Code settings
-  const autoCommand = `curl -fsSL https://toqqen.app/api/hook-script | bash -s -- "${apiKey}"`;
+  const autoCommand = `curl -fsSL https://toqqen.dev/api/hook-script | bash -s -- "${apiKey}"`;
 
   const manualJson = JSON.stringify(
     {
@@ -642,7 +642,7 @@ git commit -m "Add real-time hook verification with Firestore listener"
 
 **Step 1: Create the endpoint that serves an auto-installer script**
 
-The automatic install tab references `https://toqqen.app/api/hook-script`. This endpoint returns a bash script that:
+The automatic install tab references `https://toqqen.dev/api/hook-script`. This endpoint returns a bash script that:
 1. Downloads `toqqen-hook.sh` to `~/.claude/hooks/`
 2. Adds the API key to shell config
 3. Configures Claude Code settings
@@ -667,7 +667,7 @@ echo "Installing Toqqen hook..."
 mkdir -p "$HOOK_DIR"
 
 # 2. Download hook script
-curl -fsSL "https://toqqen.app/scripts/toqqen-hook.sh" -o "$HOOK_SCRIPT"
+curl -fsSL "https://toqqen.dev/scripts/toqqen-hook.sh" -o "$HOOK_SCRIPT"
 chmod +x "$HOOK_SCRIPT"
 
 # 3. Add API key to shell config
@@ -701,7 +701,7 @@ if [ -f "$SETTINGS_FILE" ]; then
     echo "Updated $SETTINGS_FILE"
   else
     echo "Warning: jq not found. Please manually add the hook to $SETTINGS_FILE"
-    echo "See: https://toqqen.app → Developer tab for manual setup instructions"
+    echo "See: https://toqqen.dev → Developer tab for manual setup instructions"
   fi
 else
   mkdir -p "$(dirname "$SETTINGS_FILE")"

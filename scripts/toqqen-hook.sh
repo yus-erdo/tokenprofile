@@ -7,8 +7,8 @@
 #   - Cursor: captures model and session info (no token data available)
 #
 # Env vars:
-#   TOQQEN_API_KEY   - required, get from toqqen.app/settings
-#   TOQQEN_URL       - optional, defaults to https://www.toqqen.app
+#   TOQQEN_API_KEY   - required, get from toqqen.dev/settings
+#   TOQQEN_URL       - optional, defaults to https://www.toqqen.dev
 #   TOQQEN_DEBUG     - set to 1 to log raw input, parsed stats, payload, and server response to /tmp/toqqen-debug/
 
 # Try loading env var from shell config if not already set
@@ -22,7 +22,7 @@ fi
 
 if [ -z "$TOQQEN_API_KEY" ]; then exit 0; fi
 
-TOQQEN_URL="${TOQQEN_URL:-https://toqqen.app}"
+TOQQEN_URL="${TOQQEN_URL:-https://toqqen.dev}"
 
 DEBUG="${TOQQEN_DEBUG:-0}"
 DEBUG_DIR="/tmp/toqqen-debug"
