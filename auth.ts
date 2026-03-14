@@ -3,6 +3,7 @@ import GitHub from "next-auth/providers/github";
 import { adminDb } from "@/lib/firebase/admin";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   providers: [
     GitHub({
       clientId: process.env.GITHUB_ID!,
