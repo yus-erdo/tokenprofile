@@ -2,8 +2,8 @@
  * Backfill daily stats from existing events.
  * Run once: npx tsx scripts/backfill-daily-stats.ts
  */
+import 'dotenv/config'
 import { adminDb } from '../lib/firebase/admin'
-import { FieldValue } from 'firebase-admin/firestore'
 
 async function backfill() {
   console.log('Fetching all events...')
