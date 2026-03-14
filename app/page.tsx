@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 // Heatmap colors from components/heatmap.tsx (dark mode palette)
 const HEATMAP_COLORS = ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"];
@@ -606,6 +607,15 @@ function FinalCTASection() {
 // --- Main Page ---
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.username) {
+      router.replace(`/${session.user.username}`);
+    }
+  }, [session, status, router]);
+
   return (
     <div className="bg-[#0a0a0a] text-white min-h-screen overflow-x-hidden" style={{ colorScheme: "dark" }}>
       <HeroSection />
