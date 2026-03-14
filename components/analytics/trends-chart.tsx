@@ -28,7 +28,7 @@ export function TrendsChart({ year }: { year: number }) {
 
   const options: ApexCharts.ApexOptions = {
     chart: { type: 'area', height: 260 },
-    stroke: { curve: 'straight', width: 1.5 },
+    stroke: { curve: 'straight', width: 2 },
     xaxis: {
       categories: data.map(d => d.period),
     },
@@ -49,7 +49,7 @@ export function TrendsChart({ year }: { year: number }) {
       },
     ],
     dataLabels: { enabled: false },
-    fill: { type: 'gradient', gradient: { opacityFrom: 0.15, opacityTo: 0.0 } },
+    fill: { type: 'gradient', gradient: { opacityFrom: 0.25, opacityTo: 0.02 } },
   }
 
   return (

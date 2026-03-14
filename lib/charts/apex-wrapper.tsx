@@ -64,14 +64,14 @@ export function ChartWrapper({ options, ...props }: ChartWrapperProps) {
       ...y,
       labels: {
         ...y.labels,
-        style: { fontFamily: MONO_FONT, fontSize: '10px', colors: [colors.muted] },
+        style: { fontFamily: MONO_FONT, fontSize: '10px', colors: [colors.muted], ...y.labels?.style },
       },
       title: y.title ? { ...y.title, style: { fontFamily: MONO_FONT, fontSize: '10px', color: colors.muted } } : undefined,
     })) : options.yaxis ? {
-      ...options.yaxis,
+      ...(options.yaxis as ApexYAxis),
       labels: {
         ...(options.yaxis as ApexYAxis).labels,
-        style: { fontFamily: MONO_FONT, fontSize: '10px', colors: [colors.muted] },
+        style: { fontFamily: MONO_FONT, fontSize: '10px', colors: [colors.muted], ...(options.yaxis as ApexYAxis).labels?.style },
       },
     } : undefined,
     legend: {
