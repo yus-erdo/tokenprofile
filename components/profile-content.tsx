@@ -239,59 +239,59 @@ export function ProfileContent({
       {/* Stats */}
       <BentoGrid cols={4} className="mb-6">
         <BentoCard>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Completions</div>
-          <div className="flex items-baseline justify-between">
+          <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 mb-3 font-mono-accent">Completions</div>
+          <div className="flex items-end justify-between">
             <div>
-              <div className="text-2xl font-bold font-mono-accent" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+              <div className="text-3xl font-bold font-mono-accent text-gray-900 dark:text-gray-100" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
                 <AnimatedCounter value={todayCompletions} />
               </div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">today</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent mt-1">today</div>
             </div>
             <div className="text-right">
-              <div className="text-lg text-gray-500 dark:text-gray-400 font-mono-accent" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+              <div className="text-lg font-mono-accent text-gray-600 dark:text-gray-300" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
                 <AnimatedCounter value={completionCount} />
               </div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">{year}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent">{year}</div>
             </div>
           </div>
         </BentoCard>
         <BentoCard>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Tokens</div>
-          <div className="flex items-baseline justify-between">
+          <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 mb-3 font-mono-accent">Tokens</div>
+          <div className="flex items-end justify-between">
             <div>
-              <div className="text-2xl font-bold font-mono-accent" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+              <div className="text-3xl font-bold font-mono-accent text-gray-900 dark:text-gray-100" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
                 <AnimatedCounter value={todayTokens} format={formatTokens} />
               </div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">today</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent mt-1">today</div>
             </div>
             <div className="text-right">
-              <div className="text-lg text-gray-500 dark:text-gray-400 font-mono-accent" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+              <div className="text-lg font-mono-accent text-gray-600 dark:text-gray-300" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
                 <AnimatedCounter value={totalTokens} format={formatTokens} />
               </div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">{year}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent">{year}</div>
             </div>
           </div>
         </BentoCard>
         <BentoCard>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Estimated Cost</div>
-          <div className="flex items-baseline justify-between">
+          <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 mb-3 font-mono-accent">Est. Cost</div>
+          <div className="flex items-end justify-between">
             <div>
-              <div className="text-2xl font-bold font-mono-accent" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+              <div className="text-3xl font-bold font-mono-accent text-gray-900 dark:text-gray-100" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
                 <AnimatedCounter value={todayCost} format={(v) => `$${v.toFixed(2)}`} />
               </div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">today</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent mt-1">today</div>
             </div>
             <div className="text-right">
-              <div className="text-lg text-gray-500 dark:text-gray-400 font-mono-accent" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+              <div className="text-lg font-mono-accent text-gray-600 dark:text-gray-300" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
                 <AnimatedCounter value={totalCost} format={(v) => `$${v.toFixed(2)}`} />
               </div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">{year}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent">{year}</div>
             </div>
           </div>
         </BentoCard>
         <BentoCard>
-          <div className="text-2xl font-bold truncate text-sm font-mono-accent" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{favoriteModel}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">Top Model</div>
+          <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 mb-3 font-mono-accent">Top Model</div>
+          <div className="text-lg font-bold truncate font-mono-accent text-gray-900 dark:text-gray-100" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{favoriteModel}</div>
         </BentoCard>
       </BentoGrid>
 
@@ -319,27 +319,27 @@ export function ProfileContent({
       {/* Recent completions — only visible to profile owner */}
       {isOwner && (
         <>
-          <h2 className="text-lg font-semibold mb-3">Recent Completions</h2>
-          <div className="space-y-2">
-            {completions.slice(0, 20).map((s) => (
+          <h2 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 font-mono-accent mb-3">Recent Completions</h2>
+          <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+            {completions.slice(0, 20).map((s, i) => (
               <div
                 key={s.id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3 text-sm gap-2 sm:gap-3"
+                className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-3 text-sm gap-2 sm:gap-3 ${i !== 0 ? 'border-t border-gray-100 dark:border-gray-800/50' : ''}`}
                 style={highlightedIds.has(s.id) ? ROW_HIGHLIGHTED_STYLE : ROW_BASE_STYLE}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="font-medium font-mono-accent truncate">{s.model || "unknown"}</span>
-                  <span className="text-gray-400 dark:text-gray-500 shrink-0">{s.provider}</span>
+                  <span className="font-medium font-mono-accent text-gray-900 dark:text-gray-100 truncate text-xs">{s.model || "unknown"}</span>
+                  <span className="text-gray-400 dark:text-gray-600 shrink-0 text-xs font-mono-accent">{s.provider}</span>
                   {s.project && (
-                    <span className="text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded shrink-0">
+                    <span className="text-xs font-mono-accent text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded shrink-0 border border-emerald-200 dark:border-emerald-800/50">
                       {s.project}
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-gray-500 dark:text-gray-400 shrink-0">
-                  <span className="font-mono-accent">{(s.totalTokens || 0).toLocaleString()} tokens</span>
-                  <span className="font-mono-accent">${Number(s.costUsd || 0).toFixed(4)}</span>
-                  <span>{new Date(s.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                <div className="flex items-center gap-4 shrink-0">
+                  <span className="font-mono-accent text-xs text-gray-700 dark:text-gray-300">{(s.totalTokens || 0).toLocaleString()} <span className="text-gray-400 dark:text-gray-600">tok</span></span>
+                  <span className="font-mono-accent text-xs text-gray-700 dark:text-gray-300">${Number(s.costUsd || 0).toFixed(4)}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent">{new Date(s.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                 </div>
               </div>
             ))}

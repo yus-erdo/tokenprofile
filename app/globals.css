@@ -71,13 +71,13 @@ button, [role="button"], a, summary, select, label[for], input[type="checkbox"],
 
 /* Dot grid background */
 .dot-grid-bg {
-  background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
-  background-size: 24px 24px;
-  color: rgb(0 0 0 / 0.05);
+  background-image: radial-gradient(circle, currentColor 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+  color: rgb(0 0 0 / 0.06);
 }
 
 .dark .dot-grid-bg {
-  color: rgb(255 255 255 / 0.05);
+  color: rgb(255 255 255 / 0.04);
 }
 
 /* Smooth theme transitions */
