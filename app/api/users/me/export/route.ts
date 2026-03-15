@@ -2,157 +2,122 @@ import { auth } from "@/auth";
 import { adminDb } from "@/lib/firebase/admin";
 import { NextResponse } from "next/server";
 
+// Simple in-memory rate limit: 1 export per minute per user
+const exportCooldowns = new Map<string, number>();
+
+function checkExportRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const last = exportCooldowns.get(userId);
+  if (last && now - last < 60_000) return false;
+  exportCooldowns.set(userId, now);
+  // Clean old entries periodically
+  if (exportCooldowns.size > 1000) {
+    for (const [key, time] of exportCooldowns) {
+      if (now - time > 120_000) exportCooldowns.delete(key);
+    }
+  }
+  return true;
+}
+
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.firestoreId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const format = searchParams.get("format") || "json";
-
-  if (format !== "json" && format !== "csv") {
-    return NextResponse.json({ error: "Invalid format. Use json or csv" }, { status: 400 });
-  }
-
-  const userDoc = await adminDb.collection("users").doc(session.user.firestoreId).get();
-  if (!userDoc.exists) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  const userData = userDoc.data()!;
   const userId = session.user.firestoreId;
 
-  // Stream the response
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
+  if (!checkExportRateLimit(userId)) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Please wait 1 minute between exports." },
+      { status: 429 }
+    );
+  }
 
-      try {
-        if (format === "json") {
-          controller.enqueue(encoder.encode("{\n"));
+  const { searchParams } = new URL(request.url);
+  const format = searchParams.get("format") === "csv" ? "csv" : "json";
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
 
-          // Profile
-          const profile = {
-            username: userData.username || "",
-            displayName: userData.displayName || "",
-            email: userData.email || "",
-            bio: userData.bio || "",
-            location: userData.location || "",
-            website: userData.website || "",
-            createdAt: userData.createdAt?.toDate?.()?.toISOString() || null,
-            interests: userData.interests || [],
-            dataRetention: userData.dataRetention
-              ? {
-                  period: userData.dataRetention.period,
-                  updatedAt: userData.dataRetention.updatedAt?.toDate?.()?.toISOString() || null,
-                }
-              : null,
-          };
+  let query: FirebaseFirestore.Query = adminDb
+    .collection("events")
+    .where("userId", "==", userId);
 
-          controller.enqueue(encoder.encode(`"profile": ${JSON.stringify(profile, null, 2)},\n`));
-          controller.enqueue(encoder.encode(`"events": [\n`));
+  if (fromParam) {
+    const fromDate = new Date(fromParam + "T00:00:00Z");
+    if (!isNaN(fromDate.getTime())) {
+      query = query.where("timestamp", ">=", fromDate);
+    }
+  }
 
-          // Stream events in batches
-          let lastDoc: FirebaseFirestore.QueryDocumentSnapshot | null = null;
-          let first = true;
-          const BATCH_SIZE = 500;
+  if (toParam) {
+    const toDate = new Date(toParam + "T23:59:59Z");
+    if (!isNaN(toDate.getTime())) {
+      query = query.where("timestamp", "<=", toDate);
+    }
+  }
 
-          // eslint-disable-next-line no-constant-condition
-          while (true) {
-            let query: FirebaseFirestore.Query = adminDb
-              .collection("events")
-              .where("userId", "==", userId)
-              .orderBy("timestamp", "asc")
-              .limit(BATCH_SIZE);
+  query = query.orderBy("timestamp", "desc");
 
-            if (lastDoc) {
-              query = query.startAfter(lastDoc);
-            }
+  const snapshot = await query.get();
 
-            const snapshot = await query.get();
-            if (snapshot.empty) break;
+  const events = snapshot.docs.map((doc) => {
+    const d = doc.data();
+    return {
+      date: d.timestamp?.toDate?.()?.toISOString?.() || "",
+      model: d.model || "",
+      input_tokens: d.inputTokens || 0,
+      output_tokens: d.outputTokens || 0,
+      total_tokens: d.totalTokens || 0,
+      cost_usd: d.costUsd || 0,
+      project: d.project || "",
+    };
+  });
 
-            for (const doc of snapshot.docs) {
-              const d = doc.data();
-              const event = {
-                id: doc.id,
-                model: d.model || null,
-                provider: d.provider || null,
-                inputTokens: d.inputTokens || 0,
-                outputTokens: d.outputTokens || 0,
-                cacheCreationTokens: d.cacheCreationTokens || 0,
-                cacheReadTokens: d.cacheReadTokens || 0,
-                totalTokens: d.totalTokens || 0,
-                costUsd: d.costUsd || 0,
-                project: d.project || null,
-                durationSeconds: d.durationSeconds || null,
-                numTurns: d.numTurns || null,
-                timestamp: d.timestamp?.toDate?.()?.toISOString() || null,
-              };
+  if (format === "csv") {
+    const header = "date,model,input_tokens,output_tokens,total_tokens,cost_usd,project";
+    const rows = events.map((e) =>
+      [
+        e.date,
+        `"${(e.model || "").replace(/"/g, '""')}"`,
+        e.input_tokens,
+        e.output_tokens,
+        e.total_tokens,
+        e.cost_usd,
+        `"${(e.project || "").replace(/"/g, '""')}"`,
+      ].join(",")
+    );
 
-              const prefix = first ? "" : ",\n";
-              controller.enqueue(encoder.encode(prefix + JSON.stringify(event)));
-              first = false;
-            }
+    const csv = [header, ...rows].join("\n");
 
-            lastDoc = snapshot.docs[snapshot.docs.length - 1];
-            if (snapshot.size < BATCH_SIZE) break;
-          }
-
-          controller.enqueue(encoder.encode("\n]\n}\n"));
-        } else {
-          // CSV format
-          controller.enqueue(
-            encoder.encode("date,model,input_tokens,output_tokens,total_tokens,cost_usd,project\n"),
-          );
-
-          let lastDoc: FirebaseFirestore.QueryDocumentSnapshot | null = null;
-          const BATCH_SIZE = 500;
-
-          // eslint-disable-next-line no-constant-condition
-          while (true) {
-            let query: FirebaseFirestore.Query = adminDb
-              .collection("events")
-              .where("userId", "==", userId)
-              .orderBy("timestamp", "asc")
-              .limit(BATCH_SIZE);
-
-            if (lastDoc) {
-              query = query.startAfter(lastDoc);
-            }
-
-            const snapshot = await query.get();
-            if (snapshot.empty) break;
-
-            for (const doc of snapshot.docs) {
-              const d = doc.data();
-              const date = d.timestamp?.toDate?.()?.toISOString() || "";
-              const model = (d.model || "").replace(/,/g, ";");
-              const project = (d.project || "").replace(/,/g, ";");
-              const line = `${date},${model},${d.inputTokens || 0},${d.outputTokens || 0},${d.totalTokens || 0},${d.costUsd || 0},${project}\n`;
-              controller.enqueue(encoder.encode(line));
-            }
-
-            lastDoc = snapshot.docs[snapshot.docs.length - 1];
-            if (snapshot.size < BATCH_SIZE) break;
-          }
-        }
-      } catch (err) {
-        console.error("Export error:", err);
-      } finally {
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(csv));
         controller.close();
-      }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="toqqen-export-${new Date().toISOString().split("T")[0]}.csv"`,
+      },
+    });
+  }
+
+  // JSON format - stream it
+  const jsonStr = JSON.stringify(events, null, 2);
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode(jsonStr));
+      controller.close();
     },
   });
 
-  const contentType = format === "csv" ? "text/csv" : "application/json";
-  const ext = format === "csv" ? "csv" : "json";
-
   return new Response(stream, {
     headers: {
-      "Content-Type": contentType,
-      "Content-Disposition": `attachment; filename="toqqen-export-${userId}.${ext}"`,
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Disposition": `attachment; filename="toqqen-export-${new Date().toISOString().split("T")[0]}.json"`,
     },
   });
 }

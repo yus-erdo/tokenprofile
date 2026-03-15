@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ThemeToggle } from "./theme-toggle";
+import { CommandPaletteButton } from "./command-palette";
 
 export function Nav() {
   const { data: session } = useSession();
@@ -13,6 +14,7 @@ export function Nav() {
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href={username ? `/${username}` : "/"} className="text-lg font-bold press-effect">Toqqen</Link>
         <div className="flex items-center gap-4">
+          <CommandPaletteButton />
           <ThemeToggle />
           {session ? (
             <>
