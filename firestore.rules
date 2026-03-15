@@ -15,5 +15,10 @@ service cloud.firestore {
     match /userStats/{userId}/{document=**} {
       allow read: if true;
     }
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["read"]);
+    }
   }
 }

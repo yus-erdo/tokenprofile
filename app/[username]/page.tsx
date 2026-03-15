@@ -15,6 +15,9 @@ import {
   type EarnedBadge,
   type BadgeWithStatus,
 } from "@/lib/badges";
+import { BudgetProgress } from "@/components/budget-progress";
+import { SpikeAlert } from "@/components/spike-alert";
+import { detectSpike } from "@/lib/spike-detection";
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -249,6 +252,9 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   // Goals
   const goals: Goal[] = user.goals || [];
 
+  // Spike detection
+  const spike = detectSpike(heatmapData, todayDate);
+
   const initialUser = {
     displayName: user.displayName || "",
     bio: user.bio || "",
@@ -310,25 +316,29 @@ export default async function ProfilePage({ params, searchParams }: Props) {
         {isDeveloperTab ? (
           <DeveloperTab />
         ) : (
-          <ProfileContent
-            userId={userDoc.id}
-            username={username}
-            year={year}
-            years={years}
-            initialCompletions={recentCompletions}
-            initialHeatmapData={heatmapData}
-            initialTotalTokens={totalTokens}
-            initialTotalCost={totalCost}
-            initialFavoriteModel={favoriteModel}
-            initialCompletionCount={completionCount}
-            initialTodayTokens={todayTokens}
-            initialTodayCost={todayCost}
-            initialTodayCompletions={todayCompletions}
-            initialAnalytics={initialAnalytics}
-            initialBadges={allBadges}
-            initialNewlyEarned={newlyEarnedIds}
-            initialGoals={goals}
-          />
+          <div className="flex-1 min-w-0">
+            {spike.isSpike && <SpikeAlert multiplier={spike.multiplier} />}
+            <BudgetProgress todayTokens={todayTokens} todayCost={todayCost} />
+            <ProfileContent
+              userId={userDoc.id}
+              username={username}
+              year={year}
+              years={years}
+              initialCompletions={recentCompletions}
+              initialHeatmapData={heatmapData}
+              initialTotalTokens={totalTokens}
+              initialTotalCost={totalCost}
+              initialFavoriteModel={favoriteModel}
+              initialCompletionCount={completionCount}
+              initialTodayTokens={todayTokens}
+              initialTodayCost={todayCost}
+              initialTodayCompletions={todayCompletions}
+              initialAnalytics={initialAnalytics}
+              initialBadges={allBadges}
+              initialNewlyEarned={newlyEarnedIds}
+              initialGoals={goals}
+            />
+          </div>
         )}
       </div>
     </div>
