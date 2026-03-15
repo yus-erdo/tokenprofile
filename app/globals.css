@@ -69,6 +69,22 @@ button, [role="button"], a, summary, select, label[for], input[type="checkbox"],
   animation: float 4s ease-in-out infinite;
 }
 
+/* Sparkline shades — match heatmap getColor() exactly */
+:root {
+  --sparkline-0: #ebedf0;
+  --sparkline-1: #9be9a8;
+  --sparkline-2: #40c463;
+  --sparkline-3: #30a14e;
+  --sparkline-4: #216e39;
+}
+.dark {
+  --sparkline-0: #161b22;
+  --sparkline-1: #0e4429;
+  --sparkline-2: #006d32;
+  --sparkline-3: #26a641;
+  --sparkline-4: #39d353;
+}
+
 /* Dot grid background */
 .dot-grid-bg {
   background-image: radial-gradient(circle, currentColor 0.5px, transparent 0.5px);

@@ -36,6 +36,7 @@ import type { BadgeWithStatus } from "@/lib/badges";
 import { Sparkline } from "@/components/ui/sparkline";
 import { RadialClockChart } from "@/components/analytics/radial-clock-chart";
 import { UsageFlow } from "@/components/analytics/usage-flow";
+import { TerminalBox } from "@/components/ui/terminal-box";
 
 export interface Completion {
   id: string;
@@ -401,11 +402,11 @@ export function ProfileContent({
     return () => unsubscribe();
   }, [userId, dateRange.from, dateRange.to, flashHighlights]);
 
-  // Compute 7-day sparkline data from heatmap
+  // Compute 14-day sparkline data from heatmap
   const sparklineData = useMemo(() => {
     const today = new Date();
     const days: string[] = [];
-    for (let i = 6; i >= 0; i--) {
+    for (let i = 13; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       days.push(d.toISOString().split("T")[0]);
@@ -416,156 +417,183 @@ export function ProfileContent({
     };
   }, [heatmapData]);
 
+  // Match heatmap color scale exactly (see heatmap.tsx getColor)
+  const HEATMAP_SHADES_DARK = ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'];
+  const HEATMAP_SHADES_LIGHT = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+
+  const barSparkline = (data: number[]) => {
+    const max = Math.max(...data) || 1;
+    return (
+      <div className="flex items-end gap-[2px] h-[18px]">
+        {data.map((val, i) => {
+          const ratio = max > 0 ? val / max : 0;
+          // 5 levels matching heatmap: 0, <25%, <50%, <75%, >=75%
+          const level = val === 0 ? 0 : ratio < 0.25 ? 1 : ratio < 0.5 ? 2 : ratio < 0.75 ? 3 : 4;
+          return (
+            <div
+              key={i}
+              className="flex-1 min-w-[3px]"
+              style={{
+                height: val === 0 ? '6%' : `${Math.max((val / max) * 100, 6)}%`,
+                // Use CSS custom properties to pick dark/light shades
+                backgroundColor: `var(--sparkline-${level})`,
+              }}
+            />
+          );
+        })}
+      </div>
+    );
+  };
+
+  const LABEL_CLASSES = "absolute -top-2 left-2 px-1.5 text-sm font-mono-accent text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-950 leading-none";
+
   const statCards = () => (
-    <BentoGrid cols={2} className="mb-3">
-      <BentoCard>
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">~ completions</div>
-          <Sparkline data={sparklineData.completions} />
+    <div className="border border-gray-300 dark:border-[#30363d] grid grid-cols-2 sm:grid-cols-4 mb-3">
+      {/* Completions */}
+      <div className="relative px-3 pt-3.5 pb-2">
+        <span className={LABEL_CLASSES}>completions</span>
+        <div className="flex items-baseline justify-between">
+          <div className="text-3xl font-bold font-mono-accent text-gray-900 dark:text-gray-100" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+            <AnimatedCounter value={todayCompletions} />
+          </div>
+          <span className="text-xs text-gray-500 font-mono-accent">today</span>
         </div>
-        <div className="flex items-end justify-between gap-2">
-          <div className="min-w-0">
-            <div className="text-2xl font-bold font-mono-accent text-gray-900 dark:text-gray-100 truncate" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
-              <AnimatedCounter value={todayCompletions} />
-            </div>
-            <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent mt-1">today</div>
+        <div className="flex items-baseline justify-between mt-0.5">
+          <div className="text-base font-mono-accent text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+            <AnimatedCounter value={completionCount} />
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-sm font-mono-accent text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
-              <AnimatedCounter value={completionCount} />
-            </div>
-            <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent">{year}</div>
-          </div>
+          <span className="text-xs text-gray-500 font-mono-accent">{year}</span>
         </div>
-      </BentoCard>
-      <BentoCard>
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">~ tokens</div>
-          <Sparkline data={sparklineData.tokens} />
+        <div className="mt-1.5">{barSparkline(sparklineData.completions)}</div>
+      </div>
+      {/* Tokens */}
+      <div className="relative px-3 pt-3.5 pb-2 border-l border-gray-300 dark:border-[#30363d]">
+        <span className={LABEL_CLASSES}>tokens</span>
+        <div className="flex items-baseline justify-between">
+          <div className="text-3xl font-bold font-mono-accent text-gray-900 dark:text-gray-100" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+            <AnimatedCounter value={todayTokens} format={formatTokens} />
+          </div>
+          <span className="text-xs text-gray-500 font-mono-accent">today</span>
         </div>
-        <div className="flex items-end justify-between gap-2">
-          <div className="min-w-0">
-            <div className="text-2xl font-bold font-mono-accent text-gray-900 dark:text-gray-100 truncate" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
-              <AnimatedCounter value={todayTokens} format={formatTokens} />
-            </div>
-            <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent mt-1">today</div>
+        <div className="flex items-baseline justify-between mt-0.5">
+          <div className="text-base font-mono-accent text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+            <AnimatedCounter value={totalTokens} format={formatTokens} />
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-sm font-mono-accent text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
-              <AnimatedCounter value={totalTokens} format={formatTokens} />
-            </div>
-            <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent">{year}</div>
-          </div>
+          <span className="text-xs text-gray-500 font-mono-accent">{year}</span>
         </div>
-      </BentoCard>
-      <BentoCard>
-        <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3 font-mono-accent">~ est. cost</div>
-        <div className="flex items-end justify-between gap-2">
-          <div className="min-w-0">
-            <div className="text-2xl font-bold font-mono-accent text-gray-900 dark:text-gray-100 truncate" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
-              <AnimatedCounter value={todayCost} format={(v) => `$${v.toFixed(0)}`} />
-            </div>
-            <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent mt-1">today</div>
+        <div className="mt-1.5">{barSparkline(sparklineData.tokens)}</div>
+      </div>
+      {/* Cost */}
+      <div className="relative px-3 pt-3.5 pb-2 border-t sm:border-t-0 sm:border-l border-gray-300 dark:border-[#30363d]">
+        <span className={LABEL_CLASSES}>est. cost</span>
+        <div className="flex items-baseline justify-between">
+          <div className="text-3xl font-bold font-mono-accent text-gray-900 dark:text-gray-100" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+            <AnimatedCounter value={todayCost} format={(v) => `$${v.toFixed(0)}`} />
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-sm font-mono-accent text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
-              <AnimatedCounter value={totalCost} format={(v) => `$${v.toFixed(0)}`} />
-            </div>
-            <div className="text-[10px] text-gray-400 dark:text-gray-600 font-mono-accent">{year}</div>
-          </div>
+          <span className="text-xs text-gray-500 font-mono-accent">today</span>
         </div>
-      </BentoCard>
-      <BentoCard>
-        <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3 font-mono-accent">~ top model</div>
-        <div className="text-sm font-bold truncate font-mono-accent text-gray-900 dark:text-gray-100" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{favoriteModel}</div>
-      </BentoCard>
-    </BentoGrid>
+        <div className="flex items-baseline justify-between mt-0.5">
+          <div className="text-base font-mono-accent text-gray-500 dark:text-gray-400" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
+            <AnimatedCounter value={totalCost} format={(v) => `$${v.toFixed(0)}`} />
+          </div>
+          <span className="text-xs text-gray-500 font-mono-accent">{year}</span>
+        </div>
+      </div>
+      {/* Top Model */}
+      <div className="relative px-3 pt-3.5 pb-2 border-t border-l sm:border-t-0 border-gray-300 dark:border-[#30363d]">
+        <span className={LABEL_CLASSES}>top model</span>
+        <div className="text-lg font-bold truncate font-mono-accent text-gray-900 dark:text-gray-100 mt-0.5" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>{favoriteModel}</div>
+        {initialAnalytics && initialAnalytics.models.models.length > 0 && (() => {
+          const topModel = initialAnalytics.models.models[0];
+          const pct = Math.round(topModel.percentage);
+          return (
+            <div className="flex items-center gap-2 mt-1.5">
+              <div className="flex-1 h-[3px] bg-gray-200 dark:bg-[#21262d]">
+                <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
+              </div>
+              <span className="text-xs font-mono-accent text-gray-500">{pct}%</span>
+            </div>
+          );
+        })()}
+      </div>
+    </div>
   );
 
   const heatmapSection = (mb: string = "mb-6") => (
-    <BentoCard className={mb}>
-      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-        <h2 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">
-          ~ <AnimatedCounter value={completionCount} /> completions in {year}
-        </h2>
-        <div className="flex items-center gap-2">
-          <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
-          <div className="flex gap-1">
-            {years.map((y) => (
-              <a
-                key={y}
-                href={`/${username}?year=${y}`}
-                className={`px-2 py-1 text-xs rounded font-mono-accent press-effect ${y === year ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-              >
-                {y}
-              </a>
-            ))}
-          </div>
+    <TerminalBox label={`${completionCount} completions in ${year}`} className={mb}>
+      <div className="flex items-center justify-end mb-2 gap-2 flex-wrap">
+        <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+        <div className="flex gap-0.5">
+          {years.map((y) => (
+            <a
+              key={y}
+              href={`/${username}?year=${y}`}
+              className={`px-2 py-0.5 text-[10px] font-mono-accent press-effect ${y === year ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+            >
+              {y}
+            </a>
+          ))}
         </div>
       </div>
       <Heatmap data={heatmapData} year={year} />
-    </BentoCard>
+    </TerminalBox>
   );
 
   const activityFeed = () => isOwner ? (
-    <div>
-      <h2 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 font-mono-accent mb-3">~ activity feed</h2>
+    <TerminalBox label="activity feed">
       {completions.length === 0 ? (
-        <p className="text-gray-400 dark:text-gray-500 text-center py-8 font-mono-accent text-sm">No completions recorded yet</p>
+        <p className="text-gray-500 text-center py-4 font-mono-accent text-xs">no completions recorded yet</p>
       ) : (
-        <div className="space-y-0">
-          {groupByDay(completions.slice(0, 5)).map((group) => (
-            <div key={group.date}>
-              <div className="flex items-center gap-2 mb-2 mt-4 first:mt-0">
-                <div className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600 shrink-0" />
-                <span className="text-[11px] uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">{group.label}</span>
-                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+        <div className="space-y-0 font-mono-accent">
+          {completions.slice(0, 5).map((s) => (
+            <div
+              key={s.id}
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-3 py-1.5 border-b border-gray-100 dark:border-[#21262d] last:border-b-0"
+              style={highlightedIds.has(s.id) ? ROW_HIGHLIGHTED_STYLE : ROW_BASE_STYLE}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-medium text-gray-900 dark:text-gray-100 truncate text-xs">{s.model || "unknown"}</span>
+                {s.project && (
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1 py-px shrink-0 border border-emerald-200 dark:border-emerald-800/50">
+                    {s.project}
+                  </span>
+                )}
               </div>
-              <div className="ml-[3px] border-l-[2px] border-gray-200 dark:border-gray-800 pl-5 space-y-0">
-                {group.items.map((s) => (
-                  <div
-                    key={s.id}
-                    className="relative py-2.5"
-                    style={highlightedIds.has(s.id) ? ROW_HIGHLIGHTED_STYLE : ROW_BASE_STYLE}
-                  >
-                    <div className="absolute -left-[25px] top-[14px] w-[8px] h-[8px] rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950" />
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="font-medium font-mono-accent text-gray-900 dark:text-gray-100 truncate text-xs">{s.model || "unknown"}</span>
-                        {s.project && (
-                          <span className="text-xs font-mono-accent text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded shrink-0 border border-emerald-200 dark:border-emerald-800/50">
-                            {s.project}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="font-mono-accent text-xs text-gray-700 dark:text-gray-300">{(s.totalTokens || 0).toLocaleString()} <span className="text-gray-400 dark:text-gray-600">tok</span></span>
-                        <span className="font-mono-accent text-xs text-gray-700 dark:text-gray-300">${Number(s.costUsd || 0).toFixed(4)}</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent">{formatRelativeTime(s.timestamp)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center gap-3 shrink-0 text-xs">
+                <span className="text-gray-700 dark:text-gray-300">{(s.totalTokens || 0).toLocaleString()} <span className="text-gray-400 dark:text-gray-600">tok</span></span>
+                <span className="text-gray-700 dark:text-gray-300">${Number(s.costUsd || 0).toFixed(4)}</span>
+                <span className="text-gray-500">{formatRelativeTime(s.timestamp)}</span>
               </div>
             </div>
           ))}
         </div>
       )}
-    </div>
+    </TerminalBox>
   ) : null;
 
   // ─── OVERVIEW TAB ──────────────────────────────────────────────────
   if (activeTab === "overview") {
     return (
-      <div className="flex-1 min-w-0 dot-grid-bg">
+      <div className="flex-1 min-w-0">
         {statCards()}
         {heatmapSection("mb-3")}
 
-        {/* Streaks — compact on overview */}
+        {/* Streaks — terminal box */}
         {isOwner && initialAnalytics && (
-          <div className="mb-3">
-            <StreakDisplay data={initialAnalytics.streaks} />
-          </div>
+          <TerminalBox label="streaks" className="mb-3">
+            <div className="space-y-0.5 font-mono-accent">
+              {[
+                { label: 'current streak', value: `${initialAnalytics.streaks.currentStreak}d` },
+                { label: 'longest streak', value: `${initialAnalytics.streaks.longestStreak}d` },
+                { label: 'active days', value: String(initialAnalytics.streaks.totalActiveDays) },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between py-0.5">
+                  <span className="text-xs text-gray-500">{item.label}</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </TerminalBox>
         )}
 
         {activityFeed()}
