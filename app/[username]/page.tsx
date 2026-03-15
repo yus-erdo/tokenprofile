@@ -6,6 +6,9 @@ import { ProfileTabs } from "@/components/profile-tabs";
 import { DeveloperTab } from "@/components/developer-tab";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { OnboardingWrapper } from "@/components/onboarding-wrapper";
+import { BudgetProgress } from "@/components/budget-progress";
+import { SpikeAlert } from "@/components/spike-alert";
+import { detectSpike } from "@/lib/spike-detection";
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -91,6 +94,9 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const memberSince = user.createdAt?.toDate?.()?.getFullYear() || currentYear;
   const years = Array.from({ length: currentYear - memberSince + 1 }, (_, i) => currentYear - i);
 
+  // Spike detection
+  const spike = detectSpike(heatmapData, todayDate);
+
   const initialUser = {
     displayName: user.displayName || "",
     bio: user.bio || "",
@@ -141,21 +147,25 @@ export default async function ProfilePage({ params, searchParams }: Props) {
         {isDeveloperTab ? (
           <DeveloperTab />
         ) : (
-          <ProfileContent
-            userId={userDoc.id}
-            username={username}
-            year={year}
-            years={years}
-            initialCompletions={completions}
-            initialHeatmapData={heatmapData}
-            initialTotalTokens={totalTokens}
-            initialTotalCost={totalCost}
-            initialFavoriteModel={favoriteModel}
-            initialCompletionCount={completionCount}
-            initialTodayTokens={todayTokens}
-            initialTodayCost={todayCost}
-            initialTodayCompletions={todayCompletions}
-          />
+          <div className="flex-1 min-w-0">
+            {spike.isSpike && <SpikeAlert multiplier={spike.multiplier} />}
+            <BudgetProgress todayTokens={todayTokens} todayCost={todayCost} />
+            <ProfileContent
+              userId={userDoc.id}
+              username={username}
+              year={year}
+              years={years}
+              initialCompletions={completions}
+              initialHeatmapData={heatmapData}
+              initialTotalTokens={totalTokens}
+              initialTotalCost={totalCost}
+              initialFavoriteModel={favoriteModel}
+              initialCompletionCount={completionCount}
+              initialTodayTokens={todayTokens}
+              initialTodayCost={todayCost}
+              initialTodayCompletions={todayCompletions}
+            />
+          </div>
         )}
       </div>
     </div>

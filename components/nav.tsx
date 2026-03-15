@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ThemeToggle } from "./theme-toggle";
+import { NotificationBell } from "./notification-bell";
 
 export function Nav() {
   const { data: session } = useSession();
@@ -16,6 +17,7 @@ export function Nav() {
           <ThemeToggle />
           {session ? (
             <>
+              <NotificationBell />
               {username && (
                 <Link href={`/${username}`} className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 press-effect">Profile</Link>
               )}
