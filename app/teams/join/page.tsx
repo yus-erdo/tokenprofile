@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Nav } from "@/components/nav";
 
 export default function JoinTeamPage() {
   const { data: session, status } = useSession();
@@ -47,42 +46,31 @@ export default function JoinTeamPage() {
 
   if (status === "loading") {
     return (
-      <>
-        <Nav />
-        <div className="max-w-xl mx-auto px-4 py-16 text-center text-gray-500 font-mono-accent">loading...</div>
-      </>
+      <div className="max-w-xl mx-auto px-4 py-16 text-center text-gray-500 font-mono-accent">loading...</div>
     );
   }
 
   if (!session) {
     return (
-      <>
-        <Nav />
-        <div className="max-w-xl mx-auto px-4 py-16 text-center">
-          <p className="text-gray-500 font-mono-accent mb-4">sign in to join this team</p>
-          <Link href="/sign-in" className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg text-sm font-mono-accent press-effect">
-            sign in
-          </Link>
-        </div>
-      </>
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <p className="text-gray-500 font-mono-accent mb-4">sign in to join this team</p>
+        <Link href="/sign-in" className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg text-sm font-mono-accent press-effect">
+          sign in
+        </Link>
+      </div>
     );
   }
 
   if (!code) {
     return (
-      <>
-        <Nav />
-        <div className="max-w-xl mx-auto px-4 py-16 text-center">
-          <p className="text-gray-500 font-mono-accent">no invite code provided</p>
-        </div>
-      </>
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <p className="text-gray-500 font-mono-accent">no invite code provided</p>
+      </div>
     );
   }
 
   return (
-    <>
-      <Nav />
-      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+    <div className="max-w-xl mx-auto px-4 py-16 text-center">
         {joining && (
           <p className="text-gray-500 font-mono-accent">joining team...</p>
         )}
@@ -101,6 +89,5 @@ export default function JoinTeamPage() {
           </div>
         )}
       </div>
-    </>
   );
 }

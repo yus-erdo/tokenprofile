@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
-import { Nav } from "@/components/nav";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { BentoCard } from "@/components/ui/bento-card";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
@@ -175,10 +174,8 @@ export default function ReportViewPage() {
 
   if (loading) {
     return (
-      <>
-        <Nav />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-4">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-100 dark:bg-gray-800 rounded w-64" />
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
@@ -188,29 +185,25 @@ export default function ReportViewPage() {
                 />
               ))}
             </div>
-            <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-lg" />
-          </div>
+          <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-lg" />
         </div>
-      </>
+      </div>
     );
   }
 
   if (error || !report) {
     return (
-      <>
-        <Nav />
-        <div className="max-w-4xl mx-auto px-4 py-8 text-center">
-          <p className="text-gray-500 dark:text-gray-400 font-mono-accent">
-            {error || "report not found"}
-          </p>
-          <Link
-            href="/reports"
-            className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-mono-accent mt-4 inline-block"
-          >
-            &larr; back to reports
-          </Link>
-        </div>
-      </>
+      <div className="max-w-4xl mx-auto px-4 py-8 text-center">
+        <p className="text-gray-500 dark:text-gray-400 font-mono-accent">
+          {error || "report not found"}
+        </p>
+        <Link
+          href="/reports"
+          className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-mono-accent mt-4 inline-block"
+        >
+          &larr; back to reports
+        </Link>
+      </div>
     );
   }
 
@@ -236,10 +229,8 @@ export default function ReportViewPage() {
     : "n/a";
 
   return (
-    <>
-      <Nav />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Header */}
         <div className="mb-8">
           <Link
             href="/reports"
@@ -554,8 +545,7 @@ export default function ReportViewPage() {
               }}
             />
           </BentoCard>
-        )}
-      </div>
-    </>
+      )}
+    </div>
   );
 }

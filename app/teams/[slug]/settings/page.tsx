@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
-import { Nav } from "@/components/nav";
 import { BentoCard } from "@/components/ui/bento-card";
 
 interface Member {
@@ -88,10 +87,7 @@ export default function TeamSettingsPage() {
 
   if (status === "loading" || !team) {
     return (
-      <>
-        <Nav />
-        <div className="max-w-xl mx-auto px-4 py-16 text-center text-gray-500 font-mono-accent">loading...</div>
-      </>
+      <div className="max-w-xl mx-auto px-4 py-16 text-center text-gray-500 font-mono-accent">loading...</div>
     );
   }
 
@@ -203,9 +199,7 @@ export default function TeamSettingsPage() {
   };
 
   return (
-    <>
-      <Nav />
-      <div className="max-w-xl mx-auto px-4 py-12">
+    <div className="max-w-xl mx-auto px-4 py-12">
         <h1 className="text-xl font-bold font-mono-accent mb-8">~ team settings</h1>
 
         {error && (
@@ -356,6 +350,5 @@ export default function TeamSettingsPage() {
           </BentoCard>
         )}
       </div>
-    </>
   );
 }

@@ -3,7 +3,6 @@ import { auth } from "@/auth";
 import { notFound, redirect } from "next/navigation";
 import { getTeamBySlug, getTeamMember } from "@/lib/teams/helpers";
 import { TeamDashboard } from "@/components/team-dashboard";
-import { Nav } from "@/components/nav";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -26,12 +25,9 @@ export default async function TeamPage({ params, searchParams }: Props) {
   const member = await getTeamMember(team.id, session.user.firestoreId);
   if (!member) {
     return (
-      <>
-        <Nav />
-        <div className="max-w-xl mx-auto px-4 py-16 text-center">
-          <p className="text-gray-500 font-mono-accent">you are not a member of this team</p>
-        </div>
-      </>
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <p className="text-gray-500 font-mono-accent">you are not a member of this team</p>
+      </div>
     );
   }
 
@@ -142,9 +138,7 @@ export default async function TeamPage({ params, searchParams }: Props) {
   }));
 
   return (
-    <>
-      <Nav />
-      <TeamDashboard
+    <TeamDashboard
         team={{
           id: team.id,
           name: teamData.name,
@@ -159,7 +153,6 @@ export default async function TeamPage({ params, searchParams }: Props) {
         totalCompletions={teamTotalCompletions}
         year={year}
         years={years}
-      />
-    </>
+    />
   );
 }

@@ -86,6 +86,8 @@ export function NotificationBell() {
       });
       setNotifications(items);
       setUnreadCount(items.filter((n) => !n.read).length);
+    }, (err) => {
+      console.warn("Notifications listener failed:", err.code);
     });
 
     return () => unsubscribe();

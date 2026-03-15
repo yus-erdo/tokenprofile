@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Nav } from "@/components/nav";
 
 interface TeamItem {
   id: string;
@@ -31,31 +30,23 @@ export default function TeamsPage() {
 
   if (status === "loading") {
     return (
-      <>
-        <Nav />
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center text-gray-500 font-mono-accent">loading...</div>
-      </>
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center text-gray-500 font-mono-accent">loading...</div>
     );
   }
 
   if (!session) {
     return (
-      <>
-        <Nav />
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <p className="text-gray-500 font-mono-accent mb-4">sign in to view your teams</p>
-          <Link href="/sign-in" className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg text-sm font-mono-accent press-effect">
-            sign in
-          </Link>
-        </div>
-      </>
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+        <p className="text-gray-500 font-mono-accent mb-4">sign in to view your teams</p>
+        <Link href="/sign-in" className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg text-sm font-mono-accent press-effect">
+          sign in
+        </Link>
+      </div>
     );
   }
 
   return (
-    <>
-      <Nav />
-      <div className="max-w-2xl mx-auto px-4 py-12">
+    <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-xl font-bold font-mono-accent">~ teams</h1>
           <Link
@@ -97,6 +88,5 @@ export default function TeamsPage() {
           </div>
         )}
       </div>
-    </>
   );
 }

@@ -228,7 +228,8 @@ function initDateRange(searchParams: URLSearchParams): DateRange {
   if (from && to) {
     return { from, to, label: "Custom" };
   }
-  return getStoredRange() || getDefaultRange();
+  // Don't read localStorage during SSR — defer to useEffect to avoid hydration mismatch
+  return getDefaultRange();
 }
 
 export function ProfileContent({
@@ -253,6 +254,16 @@ export function ProfileContent({
   const searchParams = useSearchParams();
   const router = useRouter();
   const [dateRange, setDateRange] = useState<DateRange>(() => initDateRange(searchParams));
+
+  // Hydrate date range from localStorage after mount to avoid SSR mismatch
+  useEffect(() => {
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    if (from && to) return; // URL params take precedence
+    const stored = getStoredRange();
+    if (stored) setDateRange(stored);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [completions, setCompletions] = useState(initialCompletions);
   const [heatmapData, setHeatmapData] = useState(initialHeatmapData);
   const [totalTokens, setTotalTokens] = useState(initialTotalTokens);
@@ -378,6 +389,9 @@ export function ProfileContent({
         .map((c) => c.doc.id);
 
       flashHighlights(changedIds);
+    }, (err) => {
+      // Silently handle permission errors — server-rendered data is still shown
+      console.warn("Real-time listener failed:", err.code);
     });
 
     return () => unsubscribe();
@@ -542,7 +556,7 @@ export function ProfileContent({
             <p className="text-gray-400 dark:text-gray-500 text-center py-8 font-mono-accent text-sm">No completions recorded yet</p>
           ) : (
             <div className="space-y-0">
-              {groupByDay(completions.slice(0, 30)).map((group) => (
+              {groupByDay(completions.slice(0, 5)).map((group) => (
                 <div key={group.date}>
                   {/* Day header */}
                   <div className="flex items-center gap-2 mb-2 mt-4 first:mt-0">

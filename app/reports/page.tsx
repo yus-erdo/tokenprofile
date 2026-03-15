@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Nav } from "@/components/nav";
 
 interface ReportSummary {
   id: string;
@@ -64,9 +63,7 @@ export default function ReportsListPage() {
   const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
   return (
-    <>
-      <Nav />
-      <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-xl font-bold font-mono-accent text-gray-900 dark:text-gray-100">
             ~ reports
@@ -149,6 +146,5 @@ export default function ReportsListPage() {
           </div>
         )}
       </div>
-    </>
   );
 }

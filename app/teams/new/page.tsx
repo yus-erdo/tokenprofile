@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Nav } from "@/components/nav";
 
 export default function NewTeamPage() {
   const { data: session, status } = useSession();
@@ -17,22 +16,16 @@ export default function NewTeamPage() {
 
   if (status === "loading") {
     return (
-      <>
-        <Nav />
-        <div className="max-w-xl mx-auto px-4 py-16 text-center text-gray-500 font-mono-accent">loading...</div>
-      </>
+      <div className="max-w-xl mx-auto px-4 py-16 text-center text-gray-500 font-mono-accent">loading...</div>
     );
   }
 
   if (!session) {
     return (
-      <>
-        <Nav />
-        <div className="max-w-xl mx-auto px-4 py-16 text-center">
-          <p className="text-gray-500 font-mono-accent">sign in to create a team</p>
-          <Link href="/sign-in" className="text-sm mt-4 inline-block underline text-gray-600 dark:text-gray-400">sign in</Link>
-        </div>
-      </>
+      <div className="max-w-xl mx-auto px-4 py-16 text-center">
+        <p className="text-gray-500 font-mono-accent">sign in to create a team</p>
+        <Link href="/sign-in" className="text-sm mt-4 inline-block underline text-gray-600 dark:text-gray-400">sign in</Link>
+      </div>
     );
   }
 
@@ -76,9 +69,7 @@ export default function NewTeamPage() {
   };
 
   return (
-    <>
-      <Nav />
-      <div className="max-w-xl mx-auto px-4 py-12">
+    <div className="max-w-xl mx-auto px-4 py-12">
         <h1 className="text-xl font-bold font-mono-accent mb-8">~ create team</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -143,6 +134,5 @@ export default function NewTeamPage() {
           </button>
         </form>
       </div>
-    </>
   );
 }

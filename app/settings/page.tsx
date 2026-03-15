@@ -3,7 +3,6 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import { Nav } from "@/components/nav";
 
 const RETENTION_OPTIONS = [
   { value: "30d", label: "30 days" },
@@ -205,10 +204,7 @@ export default function SettingsPage() {
 
   if (status === "loading" || !session) {
     return (
-      <>
-        <Nav />
-        <div className="p-8 text-center text-gray-500">Loading...</div>
-      </>
+      <div className="p-8 text-center text-gray-500">Loading...</div>
     );
   }
 
@@ -219,10 +215,8 @@ export default function SettingsPage() {
     : null;
 
   return (
-    <>
-      <Nav />
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-1">~ settings</h1>
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-1">~ settings</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 font-mono">data & privacy</p>
 
         {message && (
@@ -464,6 +458,5 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
-    </>
   );
 }
