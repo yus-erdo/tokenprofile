@@ -9,6 +9,7 @@ export const chartColors = {
     background: '#ffffff',
     foreground: '#374151',
     gridLine: '#f3f4f6',
+    border: '#e5e7eb',
     series: ['#374151', '#059669', '#6b7280', '#9ca3af', '#d1d5db'],
   },
   dark: {
@@ -21,6 +22,7 @@ export const chartColors = {
     background: '#0a0a0a',
     foreground: '#d1d5db',
     gridLine: '#1f2937',
+    border: '#374151',
     series: ['#d1d5db', '#34d399', '#9ca3af', '#6b7280', '#4b5563'],
   },
 } as const
@@ -67,3 +69,6 @@ export const MODEL_COLORS = [
 export function getModelColor(model: string, index: number): string {
   return MODEL_COLORS[index % MODEL_COLORS.length];
 }
+
+/** Flat palette array for pie/donut charts */
+export const chartPalette = [...MODEL_COLORS];

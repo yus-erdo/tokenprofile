@@ -6,13 +6,15 @@ export type NotificationType =
   | "budget_warning"
   | "budget_exceeded"
   | "spike_alert"
-  | "badge_unlocked";
+  | "badge_unlocked"
+  | "report";
 
 export interface Notification {
   userId: string;
   type: NotificationType;
   title: string;
   message: string;
+  link?: string;
   read: boolean;
   createdAt: Date;
   metadata?: Record<string, unknown>;
