@@ -24,6 +24,7 @@ export function Nav() {
                 <Link href={`/${username}`} className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 press-effect">Profile</Link>
               )}
               <Link href="/teams" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 press-effect">Teams</Link>
+              <Link href="/reports" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 press-effect">Reports</Link>
               <Link href="/settings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 press-effect">Settings</Link>
             </>
           ) : (
