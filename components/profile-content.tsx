@@ -85,6 +85,46 @@ function computeStats(completions: Completion[]) {
   };
 }
 
+function formatRelativeTime(timestamp: string): string {
+  const now = Date.now();
+  const then = new Date(timestamp).getTime();
+  const diff = now - then;
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (seconds < 60) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return new Date(timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function groupByDay(completions: Completion[]): { date: string; label: string; items: Completion[] }[] {
+  const groups: Map<string, Completion[]> = new Map();
+  for (const c of completions) {
+    const date = c.timestamp.split("T")[0] || "unknown";
+    const existing = groups.get(date);
+    if (existing) {
+      existing.push(c);
+    } else {
+      groups.set(date, [c]);
+    }
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+
+  return Array.from(groups.entries()).map(([date, items]) => {
+    let label: string;
+    if (date === today) label = "today";
+    else if (date === yesterday) label = "yesterday";
+    else label = new Date(date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return { date, label, items };
+  });
+}
+
 function formatTokens(tokens: number): string {
   if (tokens >= 1_000_000_000) return `${(tokens / 1_000_000_000).toFixed(1)}B`;
   if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
@@ -299,7 +339,7 @@ export function ProfileContent({
       <BentoCard className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">
-            ~ <span>{totalTokens.toLocaleString()}</span> tokens in {year}
+            ~ <AnimatedCounter value={completionCount} /> completions in {year}
           </h2>
           <div className="flex gap-1">
             {years.map((y) => (
@@ -316,37 +356,54 @@ export function ProfileContent({
         <Heatmap data={heatmapData} year={year} />
       </BentoCard>
 
-      {/* Recent completions — only visible to profile owner */}
+      {/* Activity feed — only visible to profile owner */}
       {isOwner && (
         <>
-          <h2 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 font-mono-accent mb-3">Recent Completions</h2>
-          <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-            {completions.slice(0, 20).map((s, i) => (
-              <div
-                key={s.id}
-                className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-3 text-sm gap-2 sm:gap-3 ${i !== 0 ? 'border-t border-gray-100 dark:border-gray-800/50' : ''}`}
-                style={highlightedIds.has(s.id) ? ROW_HIGHLIGHTED_STYLE : ROW_BASE_STYLE}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="font-medium font-mono-accent text-gray-900 dark:text-gray-100 truncate text-xs">{s.model || "unknown"}</span>
-                  <span className="text-gray-400 dark:text-gray-600 shrink-0 text-xs font-mono-accent">{s.provider}</span>
-                  {s.project && (
-                    <span className="text-xs font-mono-accent text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded shrink-0 border border-emerald-200 dark:border-emerald-800/50">
-                      {s.project}
-                    </span>
-                  )}
+          <h2 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 font-mono-accent mb-3">~ activity feed</h2>
+          {completions.length === 0 ? (
+            <p className="text-gray-400 dark:text-gray-500 text-center py-8 font-mono-accent text-sm">No completions recorded yet</p>
+          ) : (
+            <div className="space-y-0">
+              {groupByDay(completions.slice(0, 30)).map((group) => (
+                <div key={group.date}>
+                  {/* Day header */}
+                  <div className="flex items-center gap-2 mb-2 mt-4 first:mt-0">
+                    <div className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600 shrink-0" />
+                    <span className="text-[11px] uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">{group.label}</span>
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
+                  </div>
+                  {/* Timeline entries */}
+                  <div className="ml-[3px] border-l-[2px] border-gray-200 dark:border-gray-800 pl-5 space-y-0">
+                    {group.items.map((s) => (
+                      <div
+                        key={s.id}
+                        className="relative py-2.5"
+                        style={highlightedIds.has(s.id) ? ROW_HIGHLIGHTED_STYLE : ROW_BASE_STYLE}
+                      >
+                        {/* Timeline dot */}
+                        <div className="absolute -left-[25px] top-[14px] w-[8px] h-[8px] rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950" />
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-3">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="font-medium font-mono-accent text-gray-900 dark:text-gray-100 truncate text-xs">{s.model || "unknown"}</span>
+                            {s.project && (
+                              <span className="text-xs font-mono-accent text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded shrink-0 border border-emerald-200 dark:border-emerald-800/50">
+                                {s.project}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="font-mono-accent text-xs text-gray-700 dark:text-gray-300">{(s.totalTokens || 0).toLocaleString()} <span className="text-gray-400 dark:text-gray-600">tok</span></span>
+                            <span className="font-mono-accent text-xs text-gray-700 dark:text-gray-300">${Number(s.costUsd || 0).toFixed(4)}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent">{formatRelativeTime(s.timestamp)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 shrink-0">
-                  <span className="font-mono-accent text-xs text-gray-700 dark:text-gray-300">{(s.totalTokens || 0).toLocaleString()} <span className="text-gray-400 dark:text-gray-600">tok</span></span>
-                  <span className="font-mono-accent text-xs text-gray-700 dark:text-gray-300">${Number(s.costUsd || 0).toFixed(4)}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-500 font-mono-accent">{new Date(s.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
-                </div>
-              </div>
-            ))}
-            {completions.length === 0 && (
-              <p className="text-gray-400 dark:text-gray-500 text-center py-8">No completions recorded yet</p>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </>
       )}
     </div>

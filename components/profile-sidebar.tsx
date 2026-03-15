@@ -15,9 +15,78 @@ interface InitialUser {
 interface ProfileSidebarProps {
   username: string;
   initialUser: InitialUser;
+  totalTokens?: number;
 }
 
-export function ProfileSidebar({ username, initialUser }: ProfileSidebarProps) {
+function getTier(tokens: number): { name: string; gradient: string } {
+  if (tokens >= 10_000_000) return { name: "diamond", gradient: "conic-gradient(from 0deg, #b9f2ff, #e0f7ff, #7dd3fc, #38bdf8, #b9f2ff)" };
+  if (tokens >= 1_000_000) return { name: "gold", gradient: "conic-gradient(from 0deg, #fbbf24, #fde68a, #f59e0b, #fbbf24)" };
+  if (tokens >= 100_000) return { name: "silver", gradient: "conic-gradient(from 0deg, #d1d5db, #f3f4f6, #9ca3af, #d1d5db)" };
+  return { name: "bronze", gradient: "conic-gradient(from 0deg, #d97706, #fbbf24, #b45309, #d97706)" };
+}
+
+function renderMarkdownBio(text: string): React.ReactNode {
+  // Sanitize: strip HTML tags
+  const sanitized = text.replace(/<[^>]*>/g, "");
+
+  // Split into segments and process inline markdown
+  const parts: React.ReactNode[] = [];
+  // Process line by line for line breaks
+  const lines = sanitized.split("\n");
+
+  lines.forEach((line, lineIdx) => {
+    if (lineIdx > 0) parts.push(<br key={`br-${lineIdx}`} />);
+
+    // Regex-based inline markdown: bold, italic, code, links
+    const inlineRegex = /(\*\*(.+?)\*\*|__(.+?)__|_(.+?)_|\*(.+?)\*|`(.+?)`|\[(.+?)\]\((.+?)\))/g;
+    let lastIndex = 0;
+    let match;
+    let segIdx = 0;
+
+    while ((match = inlineRegex.exec(line)) !== null) {
+      // Add text before match
+      if (match.index > lastIndex) {
+        parts.push(line.slice(lastIndex, match.index));
+      }
+
+      const key = `${lineIdx}-${segIdx++}`;
+
+      if (match[2] || match[3]) {
+        // Bold: **text** or __text__
+        parts.push(<strong key={key}>{match[2] || match[3]}</strong>);
+      } else if (match[4] || match[5]) {
+        // Italic: _text_ or *text*
+        parts.push(<em key={key}>{match[4] || match[5]}</em>);
+      } else if (match[6]) {
+        // Code: `text`
+        parts.push(
+          <code key={key} className="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-800 text-xs font-mono-accent">
+            {match[6]}
+          </code>
+        );
+      } else if (match[7] && match[8]) {
+        // Link: [text](url)
+        const href = match[8].startsWith("http") ? match[8] : `https://${match[8]}`;
+        parts.push(
+          <a key={key} href={href} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+            {match[7]}
+          </a>
+        );
+      }
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < line.length) {
+      parts.push(line.slice(lastIndex));
+    }
+  });
+
+  return <>{parts}</>;
+}
+
+export function ProfileSidebar({ username, initialUser, totalTokens = 0 }: ProfileSidebarProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const isOwner = session?.user?.username === username;
@@ -55,6 +124,8 @@ export function ProfileSidebar({ username, initialUser }: ProfileSidebarProps) {
     setSaving(false);
   }
 
+  const tier = getTier(totalTokens);
+
   const displayName = editing ? editForm.displayName : profile.displayName;
   const bio = editing ? editForm.bio : profile.bio;
   const location = editing ? editForm.location : profile.location;
@@ -65,11 +136,16 @@ export function ProfileSidebar({ username, initialUser }: ProfileSidebarProps) {
       {/* Mobile avatar + name row */}
       <div className="flex flex-row items-center gap-4 md:hidden">
         {profile.avatarUrl && (
-          <img
-            src={profile.avatarUrl}
-            alt={displayName || username}
-            className="w-20 h-20 rounded-full border border-gray-200 dark:border-gray-700 flex-shrink-0"
-          />
+          <div className="flex-shrink-0 flex flex-col items-center">
+            <div className="rounded-full p-[3px]" style={{ background: tier.gradient }}>
+              <img
+                src={profile.avatarUrl}
+                alt={displayName || username}
+                className="w-20 h-20 rounded-full border-2 border-white dark:border-gray-950"
+              />
+            </div>
+            <span className="text-[10px] font-mono-accent text-gray-400 dark:text-gray-600 mt-1 uppercase tracking-wider">{tier.name}</span>
+          </div>
         )}
         <div className="min-w-0">
           {editing ? (
@@ -110,7 +186,7 @@ export function ProfileSidebar({ username, initialUser }: ProfileSidebarProps) {
           className="mt-3 w-full text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-900"
         />
       ) : (
-        bio && <p className="mt-3 text-gray-700 dark:text-gray-300 text-sm md:text-base">{bio}</p>
+        bio && <p className="mt-3 text-gray-700 dark:text-gray-300 text-sm md:text-base">{renderMarkdownBio(bio)}</p>
       )}
 
       {isOwner && !editing && (

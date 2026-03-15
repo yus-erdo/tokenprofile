@@ -1,3 +1,4 @@
+import { type CSSProperties } from "react";
 import { adminDb } from "@/lib/firebase/admin";
 import { notFound } from "next/navigation";
 import { ProfileContent, type Completion } from "@/components/profile-content";
@@ -104,6 +105,21 @@ export default async function ProfilePage({ params, searchParams }: Props) {
 
   const isDeveloperTab = tab === "developer";
 
+  // Avatar ring tier
+  const tierGradient: string =
+    totalTokens >= 10_000_000 ? "conic-gradient(from 0deg, #b9f2ff, #e0f7ff, #7dd3fc, #38bdf8, #b9f2ff)" :
+    totalTokens >= 1_000_000 ? "conic-gradient(from 0deg, #fbbf24, #fde68a, #f59e0b, #fbbf24)" :
+    totalTokens >= 100_000 ? "conic-gradient(from 0deg, #d1d5db, #f3f4f6, #9ca3af, #d1d5db)" :
+    "conic-gradient(from 0deg, #d97706, #fbbf24, #b45309, #d97706)";
+
+  const tierName: string =
+    totalTokens >= 10_000_000 ? "diamond" :
+    totalTokens >= 1_000_000 ? "gold" :
+    totalTokens >= 100_000 ? "silver" :
+    "bronze";
+
+  const avatarRingStyle: CSSProperties = { background: tierGradient };
+
   return (
     <div className="max-w-6xl mx-auto px-4">
       <OnboardingWrapper hasOnboarded={hasOnboarded} apiKey={apiKey} userId={userDoc.id} />
@@ -111,12 +127,15 @@ export default async function ProfilePage({ params, searchParams }: Props) {
       <div className="relative hidden md:block h-[56px] mt-8">
         {/* Avatar — positioned so it starts at the top and extends past the border */}
         {user.avatarUrl && (
-          <div className="absolute left-0 top-0 z-10">
-            <img
-              src={user.avatarUrl}
-              alt={user.displayName || user.username}
-              className="w-[200px] h-[200px] rounded-full border-4 border-white dark:border-gray-950 bg-white dark:bg-gray-950"
-            />
+          <div className="absolute left-0 top-0 z-10 flex flex-col items-center">
+            <div className="rounded-full p-[4px]" style={avatarRingStyle}>
+              <img
+                src={user.avatarUrl}
+                alt={user.displayName || user.username}
+                className="w-[200px] h-[200px] rounded-full border-4 border-white dark:border-gray-950 bg-white dark:bg-gray-950"
+              />
+            </div>
+            <span className="text-[10px] font-mono-accent text-gray-400 dark:text-gray-600 mt-1 uppercase tracking-wider">{tierName}</span>
           </div>
         )}
         {/* Tab bar — sits at the bottom of this header area, border goes full width */}
@@ -135,7 +154,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
       {/* Two-column layout */}
       <div className="flex flex-col md:flex-row gap-8 pt-4">
         {/* Sidebar */}
-        <ProfileSidebar username={username} initialUser={initialUser} />
+        <ProfileSidebar username={username} initialUser={initialUser} totalTokens={totalTokens} />
 
         {/* Main content */}
         {isDeveloperTab ? (
