@@ -20,7 +20,6 @@ import { PeakHoursChart } from "@/components/analytics/peak-hours-chart";
 import { StreakDisplay } from "@/components/analytics/streak-display";
 import { TrendsChart } from "@/components/analytics/trends-chart";
 import { ModelBreakdown } from "@/components/analytics/model-breakdown";
-import { useAnalytics } from "@/lib/hooks/use-analytics";
 
 export interface Completion {
   id: string;
@@ -30,6 +29,26 @@ export interface Completion {
   costUsd: number;
   project: string | null;
   timestamp: string;
+}
+
+export interface AnalyticsData {
+  peakHours: {
+    hourly: { hour: number; completions: number; tokens: number; cost: number }[];
+    daily: { day: number; completions: number; tokens: number; cost: number }[];
+  };
+  trends: {
+    periods: { period: string; tokens: number; cost: number; completions: number; change: { tokens: number; cost: number; completions: number } | null }[];
+    granularity: string;
+  };
+  models: {
+    models: { model: string; tokens: number; cost: number; completions: number; percentage: number }[];
+    totalTokens: number;
+  };
+  streaks: {
+    currentStreak: number;
+    longestStreak: number;
+    totalActiveDays: number;
+  };
 }
 
 interface ProfileContentProps {
@@ -46,6 +65,7 @@ interface ProfileContentProps {
   initialTodayTokens: number;
   initialTodayCost: number;
   initialTodayCompletions: number;
+  initialAnalytics?: AnalyticsData;
 }
 
 function computeStats(completions: Completion[]) {
@@ -134,6 +154,7 @@ export function ProfileContent({
   initialTodayTokens,
   initialTodayCost,
   initialTodayCompletions,
+  initialAnalytics,
 }: ProfileContentProps) {
   const [completions, setCompletions] = useState(initialCompletions);
   const [heatmapData, setHeatmapData] = useState(initialHeatmapData);
@@ -322,7 +343,7 @@ export function ProfileContent({
       </BentoCard>
 
       {/* Analytics — only visible to profile owner */}
-      {isOwner && <AnalyticsSection year={year} />}
+      {isOwner && initialAnalytics && <AnalyticsSection initialData={initialAnalytics} />}
 
       {/* Recent completions — only visible to profile owner */}
       {isOwner && (
@@ -361,19 +382,45 @@ export function ProfileContent({
   );
 }
 
-function AnalyticsSection({ year }: { year: number }) {
+function AnalyticsSection({ initialData }: { initialData: AnalyticsData }) {
   const [granularity, setGranularity] = useState<'week' | 'month'>('week')
-  const { data, loading } = useAnalytics(year, granularity)
 
-  if (loading) return <div className="h-32 animate-pulse bg-gray-100 dark:bg-gray-900 rounded-lg mb-6" />
-  if (!data) return null
+  // For monthly view, re-bucket the weekly periods into months (client-side only)
+  const trends = granularity === 'month'
+    ? {
+        ...initialData.trends,
+        granularity: 'month',
+        periods: (() => {
+          const monthBuckets = new Map<string, { tokens: number; cost: number; completions: number }>();
+          for (const p of initialData.trends.periods) {
+            const monthKey = p.period.slice(0, 7);
+            const existing = monthBuckets.get(monthKey) || { tokens: 0, cost: 0, completions: 0 };
+            existing.tokens += p.tokens; existing.cost += p.cost; existing.completions += p.completions;
+            monthBuckets.set(monthKey, existing);
+          }
+          return Array.from(monthBuckets.entries())
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([period, stats], i, arr) => {
+              const prev = i > 0 ? arr[i - 1][1] : null;
+              return {
+                period, ...stats,
+                change: prev ? {
+                  tokens: prev.tokens ? ((stats.tokens - prev.tokens) / prev.tokens) * 100 : 0,
+                  cost: prev.cost ? ((stats.cost - prev.cost) / prev.cost) * 100 : 0,
+                  completions: prev.completions ? ((stats.completions - prev.completions) / prev.completions) * 100 : 0,
+                } : null,
+              };
+            });
+        })(),
+      }
+    : initialData.trends;
 
   return (
     <div className="space-y-6 mb-6">
-      <StreakDisplay data={data.streaks} />
-      <ModelBreakdown data={data.models} />
-      <TrendsChart data={data.trends} granularity={granularity} onGranularityChange={setGranularity} />
-      <PeakHoursChart data={data.peakHours} />
+      <StreakDisplay data={initialData.streaks} />
+      <ModelBreakdown data={initialData.models} />
+      <TrendsChart data={trends} granularity={granularity} onGranularityChange={setGranularity} />
+      <PeakHoursChart data={initialData.peakHours} />
     </div>
   )
 }
