@@ -85,3 +85,5 @@ export function ChartWrapper({ options, ...props }: ChartWrapperProps) {
 
   return <ReactApexChart options={themedOptions} {...props} />
 }
+
+export default ChartWrapper
