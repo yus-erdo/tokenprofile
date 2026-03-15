@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, type CSSProperties } from "react";
 import {
   collection,
   query,
@@ -16,6 +16,9 @@ import { BentoGrid } from "@/components/ui/bento-grid";
 import { BentoCard } from "@/components/ui/bento-card";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { StatCardSkeleton, CompletionItemSkeleton } from "@/components/ui/skeleton";
+import { Sparkline } from "@/components/ui/sparkline";
+import { RadialClockChart } from "@/components/analytics/radial-clock-chart";
+import { UsageFlow } from "@/components/analytics/usage-flow";
 
 export interface Completion {
   id: string;
@@ -51,6 +54,9 @@ function computeStats(completions: Completion[]) {
   let todayCost = 0;
   let todayCompletions = 0;
   const modelCounts: Record<string, number> = {};
+  const modelTokens: Record<string, { input: number; output: number; total: number }> = {};
+  const hourlyCompletions = new Array<number>(24).fill(0);
+  const hourlyTokens = new Array<number>(24).fill(0);
   const todayDate = new Date().toISOString().split("T")[0];
 
   for (const s of completions) {
@@ -67,7 +73,24 @@ function computeStats(completions: Completion[]) {
       todayCost += Number(s.costUsd || 0);
       todayCompletions += 1;
     }
-    if (s.model) modelCounts[s.model] = (modelCounts[s.model] || 0) + 1;
+    if (s.model) {
+      modelCounts[s.model] = (modelCounts[s.model] || 0) + 1;
+      const mt = modelTokens[s.model] ?? { input: 0, output: 0, total: 0 };
+      const tokens = s.totalTokens || 0;
+      // Approximate split: 60% input, 40% output (when we don't have exact breakdown)
+      mt.input += Math.round(tokens * 0.6);
+      mt.output += Math.round(tokens * 0.4);
+      mt.total += tokens;
+      modelTokens[s.model] = mt;
+    }
+    // Extract hour from timestamp
+    if (s.timestamp) {
+      const hour = new Date(s.timestamp).getHours();
+      if (hour >= 0 && hour < 24) {
+        hourlyCompletions[hour] += 1;
+        hourlyTokens[hour] += s.totalTokens || 0;
+      }
+    }
   }
 
   const favoriteModel =
@@ -82,6 +105,9 @@ function computeStats(completions: Completion[]) {
     todayTokens,
     todayCost,
     todayCompletions,
+    hourlyCompletions,
+    hourlyTokens,
+    modelTokens,
   };
 }
 
@@ -139,6 +165,18 @@ export function ProfileContent({
   const [todayTokens, setTodayTokens] = useState(initialTodayTokens);
   const [todayCost, setTodayCost] = useState(initialTodayCost);
   const [todayCompletions, setTodayCompletions] = useState(initialTodayCompletions);
+  const [hourlyCompletions, setHourlyCompletions] = useState<number[]>(() => {
+    const initial = computeStats(initialCompletions);
+    return initial.hourlyCompletions;
+  });
+  const [hourlyTokens, setHourlyTokens] = useState<number[]>(() => {
+    const initial = computeStats(initialCompletions);
+    return initial.hourlyTokens;
+  });
+  const [modelTokens, setModelTokens] = useState<Record<string, { input: number; output: number; total: number }>>(() => {
+    const initial = computeStats(initialCompletions);
+    return initial.modelTokens;
+  });
   const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
   const [statsFlash, setStatsFlash] = useState(false);
   const { data: session } = useSession();
@@ -217,6 +255,9 @@ export function ProfileContent({
       setTodayTokens(stats.todayTokens);
       setTodayCost(stats.todayCost);
       setTodayCompletions(stats.todayCompletions);
+      setHourlyCompletions(stats.hourlyCompletions);
+      setHourlyTokens(stats.hourlyTokens);
+      setModelTokens(stats.modelTokens);
 
       if (isFirstSnapshot.current) {
         isFirstSnapshot.current = false;
@@ -234,12 +275,30 @@ export function ProfileContent({
     return () => unsubscribe();
   }, [userId, year, flashHighlights]);
 
+  // Compute 7-day sparkline data from heatmap
+  const sparklineData = useMemo(() => {
+    const today = new Date();
+    const days: string[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      days.push(d.toISOString().split("T")[0]);
+    }
+    return {
+      completions: days.map((d) => heatmapData[d]?.completions ?? 0),
+      tokens: days.map((d) => heatmapData[d]?.tokens ?? 0),
+    };
+  }, [heatmapData]);
+
   return (
     <div className="flex-1 min-w-0 dot-grid-bg">
       {/* Stats */}
       <BentoGrid cols={2} className="mb-6">
         <BentoCard>
-          <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3 font-mono-accent">~ completions</div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">~ completions</div>
+            <Sparkline data={sparklineData.completions} />
+          </div>
           <div className="flex items-end justify-between gap-2">
             <div className="min-w-0">
               <div className="text-2xl font-bold font-mono-accent text-gray-900 dark:text-gray-100 truncate" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
@@ -256,7 +315,10 @@ export function ProfileContent({
           </div>
         </BentoCard>
         <BentoCard>
-          <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3 font-mono-accent">~ tokens</div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">~ tokens</div>
+            <Sparkline data={sparklineData.tokens} />
+          </div>
           <div className="flex items-end justify-between gap-2">
             <div className="min-w-0">
               <div className="text-2xl font-bold font-mono-accent text-gray-900 dark:text-gray-100 truncate" style={statsFlash ? STAT_FLASH_STYLE : STAT_BASE_STYLE}>
@@ -315,6 +377,23 @@ export function ProfileContent({
         </div>
         <Heatmap data={heatmapData} year={year} />
       </BentoCard>
+
+      {/* Advanced Visualizations */}
+      <BentoGrid cols={2} className="mb-6">
+        <BentoCard>
+          <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3 font-mono-accent">~ activity clock</div>
+          <RadialClockChart
+            hourly={hourlyCompletions}
+            hourlyAlt={hourlyTokens}
+            label="completions"
+            labelAlt="tokens"
+          />
+        </BentoCard>
+        <BentoCard>
+          <div className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-3 font-mono-accent">~ token flow</div>
+          <UsageFlow modelTokens={modelTokens} />
+        </BentoCard>
+      </BentoGrid>
 
       {/* Recent completions — only visible to profile owner */}
       {isOwner && (
