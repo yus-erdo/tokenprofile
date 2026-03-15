@@ -17,13 +17,14 @@ interface Props {
   }
   granularity: 'week' | 'month'
   onGranularityChange: (g: 'week' | 'month') => void
+  height?: number
 }
 
-export function TrendsChart({ data, granularity, onGranularityChange }: Props) {
+export function TrendsChart({ data, granularity, onGranularityChange, height = 260 }: Props) {
   if (data.periods.length === 0) return null
 
   const options: ApexCharts.ApexOptions = {
-    chart: { type: 'area', height: 260 },
+    chart: { type: 'area', height },
     stroke: { curve: 'straight', width: 2 },
     xaxis: {
       categories: data.periods.map(d => d.period),
@@ -69,7 +70,7 @@ export function TrendsChart({ data, granularity, onGranularityChange }: Props) {
       </div>
       <ChartWrapper
         type="area"
-        height={260}
+        height={height}
         options={options}
         series={[
           { name: 'tokens', data: data.periods.map(d => d.tokens) },

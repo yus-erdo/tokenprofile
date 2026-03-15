@@ -11,6 +11,7 @@ import { CHART_COLORS } from "@/lib/charts/chart-colors";
 interface RollingAverageChartProps {
   data: Record<string, { tokens: number; completions: number }>;
   year: number;
+  height?: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -31,7 +32,7 @@ function formatCompact(n: number): string {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function RollingAverageChart({ data, year }: RollingAverageChartProps) {
+export function RollingAverageChart({ data, year, height = 220 }: RollingAverageChartProps) {
   const [dark, setDark] = useState(false);
   const [showRolling, setShowRolling] = useState(true);
 
@@ -207,7 +208,7 @@ export function RollingAverageChart({ data, year }: RollingAverageChartProps) {
         options={options}
         series={series}
         type="line"
-        height={220}
+        height={height}
       />
     </div>
   );

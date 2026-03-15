@@ -12,6 +12,7 @@ import type { Completion } from "@/components/profile-content";
 interface StackedBarChartProps {
   completions: Completion[];
   year: number;
+  height?: number;
 }
 
 type Granularity = "daily" | "weekly";
@@ -44,7 +45,7 @@ function formatCompact(n: number): string {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function StackedBarChart({ completions, year }: StackedBarChartProps) {
+export function StackedBarChart({ completions, year, height = 280 }: StackedBarChartProps) {
   const [dark, setDark] = useState(false);
   const [granularity, setGranularity] = useState<Granularity>("weekly");
 
@@ -214,7 +215,7 @@ export function StackedBarChart({ completions, year }: StackedBarChartProps) {
         options={options}
         series={series}
         type="bar"
-        height={280}
+        height={height}
       />
     </div>
   );

@@ -7,14 +7,17 @@ interface Props {
     hourly: { hour: number; completions: number; tokens: number; cost: number }[]
     daily: { day: number; completions: number; tokens: number; cost: number }[]
   }
+  height?: number
 }
 
-export function PeakHoursChart({ data }: Props) {
+export function PeakHoursChart({ data, height }: Props) {
+  const hourlyHeight = height ?? 220
+  const dailyHeight = height ? Math.round(height * 0.82) : 180
   const hourLabels = Array.from({ length: 24 }, (_, i) => String(i))
   const dayLabels = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
   const hourlyOptions: ApexCharts.ApexOptions = {
-    chart: { type: 'bar', height: 220 },
+    chart: { type: 'bar', height: hourlyHeight },
     plotOptions: { bar: { borderRadius: 2, columnWidth: '70%' } },
     xaxis: { categories: hourLabels },
     yaxis: { title: { text: '' } },
@@ -22,7 +25,7 @@ export function PeakHoursChart({ data }: Props) {
   }
 
   const dailyOptions: ApexCharts.ApexOptions = {
-    chart: { type: 'bar', height: 180 },
+    chart: { type: 'bar', height: dailyHeight },
     plotOptions: { bar: { borderRadius: 2, horizontal: true, barHeight: '60%' } },
     xaxis: { categories: dayLabels },
     yaxis: { labels: { style: { fontSize: '10px' } } },
@@ -35,7 +38,7 @@ export function PeakHoursChart({ data }: Props) {
         <h3 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent mb-2">~ activity by hour</h3>
         <ChartWrapper
           type="bar"
-          height={220}
+          height={hourlyHeight}
           options={hourlyOptions}
           series={[{ name: 'completions', data: data.hourly.map(h => h.completions) }]}
         />
@@ -44,7 +47,7 @@ export function PeakHoursChart({ data }: Props) {
         <h3 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent mb-2">~ activity by day</h3>
         <ChartWrapper
           type="bar"
-          height={180}
+          height={dailyHeight}
           options={dailyOptions}
           series={[{ name: 'completions', data: data.daily.map(d => d.completions) }]}
         />

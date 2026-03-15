@@ -3,6 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
+import { HookInstallGuide } from "@/components/hook-install-guide";
 
 const RETENTION_OPTIONS = [
   { value: "30d", label: "30 days" },
@@ -35,6 +36,8 @@ export default function SettingsPage() {
   const [cleanupResult, setCleanupResult] = useState<string | null>(null);
   const [exportingFormat, setExportingFormat] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Deletion state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -69,7 +72,10 @@ export default function SettingsPage() {
 
     fetch("/api/users/me")
       .then((r) => r.json())
-      .then((d) => setUserData(d))
+      .then((d) => {
+        setUserData(d);
+        if (d.apiKey) setApiKey(d.apiKey);
+      })
       .catch(() => {});
   }, [session]);
 
@@ -202,6 +208,27 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleRegenerateKey() {
+    if (!confirm("Regenerate API key? Your existing hooks will stop working.")) return;
+    try {
+      const res = await fetch("/api/users/me/regenerate-key", { method: "POST" });
+      const result = await res.json();
+      if (result.apiKey) {
+        setApiKey(result.apiKey);
+        showMessage("API key regenerated", "success");
+      }
+    } catch {
+      showMessage("Failed to regenerate key", "error");
+    }
+  }
+
+  function copyApiKey() {
+    if (!apiKey) return;
+    navigator.clipboard.writeText(apiKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   if (status === "loading" || !session) {
     return (
       <div className="p-8 text-center text-gray-500">Loading...</div>
@@ -259,6 +286,36 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
+        )}
+
+        {/* API Key */}
+        {apiKey && (
+          <section className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-1">~ api key</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+              Use this key in your hooks to push completion data.
+            </p>
+            <div className="flex items-center gap-2 mb-4">
+              <code className="flex-1 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded text-sm font-mono truncate">{apiKey}</code>
+              <button onClick={copyApiKey} className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 font-mono">
+                {copied ? "Copied!" : "Copy"}
+              </button>
+              <button onClick={handleRegenerateKey} className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-red-600 dark:text-red-400 font-mono">
+                Regenerate
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Installation */}
+        {apiKey && (
+          <section className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-1">~ setup</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Connect your AI coding tool to start tracking usage automatically.
+            </p>
+            <HookInstallGuide apiKey={apiKey} />
+          </section>
         )}
 
         {/* Data Retention */}

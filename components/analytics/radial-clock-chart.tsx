@@ -12,6 +12,7 @@ interface RadialClockChartProps {
   hourlyAlt?: number[];
   label?: string;
   labelAlt?: string;
+  height?: number;
 }
 
 export function RadialClockChart({
@@ -19,6 +20,7 @@ export function RadialClockChart({
   hourlyAlt,
   label = "completions",
   labelAlt = "tokens",
+  height = 280,
 }: RadialClockChartProps) {
   const [metric, setMetric] = useState<"primary" | "alt">("primary");
   const isDark = useTheme();
@@ -140,7 +142,7 @@ export function RadialClockChart({
           type="polarArea"
           series={data}
           options={options}
-          height={280}
+          height={height}
         />
         {/* Center text overlay */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

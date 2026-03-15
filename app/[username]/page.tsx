@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { ProfileContent, type Completion } from "@/components/profile-content";
 import { ProfileSidebar } from "@/components/profile-sidebar";
 import { ProfileTabs } from "@/components/profile-tabs";
-import { DeveloperTab } from "@/components/developer-tab";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { OnboardingWrapper } from "@/components/onboarding-wrapper";
 import type { Goal } from "@/components/usage-goals";
@@ -265,7 +264,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
 
   const hasOnboarded = user.hasOnboarded !== false;
   const apiKey = user.apiKey || "";
-  const isDeveloperTab = tab === "developer";
+  const activeTab = (tab === "charts" || tab === "insights") ? tab : "overview";
 
   // Avatar ring tier
   const tierGradient: string =
@@ -313,33 +312,30 @@ export default async function ProfilePage({ params, searchParams }: Props) {
         {/* Sidebar */}
         <ProfileSidebar username={username} initialUser={initialUser} totalTokens={totalTokens} />
 
-        {isDeveloperTab ? (
-          <DeveloperTab />
-        ) : (
-          <div className="flex-1 min-w-0">
-            {spike.isSpike && <SpikeAlert multiplier={spike.multiplier} />}
-            <BudgetProgress todayTokens={todayTokens} todayCost={todayCost} />
-            <ProfileContent
-              userId={userDoc.id}
-              username={username}
-              year={year}
-              years={years}
-              initialCompletions={recentCompletions}
-              initialHeatmapData={heatmapData}
-              initialTotalTokens={totalTokens}
-              initialTotalCost={totalCost}
-              initialFavoriteModel={favoriteModel}
-              initialCompletionCount={completionCount}
-              initialTodayTokens={todayTokens}
-              initialTodayCost={todayCost}
-              initialTodayCompletions={todayCompletions}
-              initialAnalytics={initialAnalytics}
-              initialBadges={allBadges}
-              initialNewlyEarned={newlyEarnedIds}
-              initialGoals={goals}
-            />
-          </div>
-        )}
+        <div className="flex-1 min-w-0">
+          {spike.isSpike && <SpikeAlert multiplier={spike.multiplier} />}
+          <BudgetProgress todayTokens={todayTokens} todayCost={todayCost} />
+          <ProfileContent
+            userId={userDoc.id}
+            username={username}
+            year={year}
+            years={years}
+            activeTab={activeTab}
+            initialCompletions={recentCompletions}
+            initialHeatmapData={heatmapData}
+            initialTotalTokens={totalTokens}
+            initialTotalCost={totalCost}
+            initialFavoriteModel={favoriteModel}
+            initialCompletionCount={completionCount}
+            initialTodayTokens={todayTokens}
+            initialTodayCost={todayCost}
+            initialTodayCompletions={todayCompletions}
+            initialAnalytics={initialAnalytics}
+            initialBadges={allBadges}
+            initialNewlyEarned={newlyEarnedIds}
+            initialGoals={goals}
+          />
+        </div>
       </div>
     </div>
   );
