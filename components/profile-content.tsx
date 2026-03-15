@@ -12,6 +12,8 @@ import {
 import { useSession } from "next-auth/react";
 import { db } from "@/lib/firebase/client";
 import { Heatmap } from "@/components/heatmap";
+import { StackedBarChart } from "@/components/analytics/stacked-bar-chart";
+import { RollingAverageChart } from "@/components/analytics/rolling-average-chart";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { BentoCard } from "@/components/ui/bento-card";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
@@ -314,6 +316,16 @@ export function ProfileContent({
           </div>
         </div>
         <Heatmap data={heatmapData} year={year} />
+      </BentoCard>
+
+      {/* Rolling Average / Trends */}
+      <BentoCard className="mb-6">
+        <RollingAverageChart data={heatmapData} year={year} />
+      </BentoCard>
+
+      {/* Stacked Bar Chart — tokens by model */}
+      <BentoCard className="mb-6">
+        <StackedBarChart completions={completions} year={year} />
       </BentoCard>
 
       {/* Recent completions — only visible to profile owner */}
