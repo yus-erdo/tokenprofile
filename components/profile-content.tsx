@@ -16,6 +16,9 @@ import { BentoGrid } from "@/components/ui/bento-grid";
 import { BentoCard } from "@/components/ui/bento-card";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { StatCardSkeleton, CompletionItemSkeleton } from "@/components/ui/skeleton";
+import { BadgeShowcase } from "@/components/badge-showcase";
+import { UsageGoals, type Goal } from "@/components/usage-goals";
+import type { BadgeWithStatus } from "@/lib/badges";
 
 export interface Completion {
   id: string;
@@ -41,6 +44,9 @@ interface ProfileContentProps {
   initialTodayTokens: number;
   initialTodayCost: number;
   initialTodayCompletions: number;
+  initialBadges: BadgeWithStatus[];
+  initialNewlyEarned: string[];
+  initialGoals: Goal[];
 }
 
 function computeStats(completions: Completion[]) {
@@ -129,6 +135,9 @@ export function ProfileContent({
   initialTodayTokens,
   initialTodayCost,
   initialTodayCompletions,
+  initialBadges,
+  initialNewlyEarned,
+  initialGoals,
 }: ProfileContentProps) {
   const [completions, setCompletions] = useState(initialCompletions);
   const [heatmapData, setHeatmapData] = useState(initialHeatmapData);
@@ -315,6 +324,21 @@ export function ProfileContent({
         </div>
         <Heatmap data={heatmapData} year={year} />
       </BentoCard>
+
+      {/* Badges */}
+      <BadgeShowcase
+        initialBadges={initialBadges}
+        initialNewlyEarned={initialNewlyEarned}
+        isOwner={isOwner}
+      />
+
+      {/* Usage Goals */}
+      <UsageGoals
+        goals={initialGoals}
+        todayTokens={todayTokens}
+        todayCompletions={todayCompletions}
+        isOwner={isOwner}
+      />
 
       {/* Recent completions — only visible to profile owner */}
       {isOwner && (

@@ -6,6 +6,14 @@ import { ProfileTabs } from "@/components/profile-tabs";
 import { DeveloperTab } from "@/components/developer-tab";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { OnboardingWrapper } from "@/components/onboarding-wrapper";
+import type { Goal } from "@/components/usage-goals";
+import {
+  evaluateBadges,
+  computeBadgeStats,
+  getNewlyEarnedBadges,
+  type EarnedBadge,
+  type BadgeWithStatus,
+} from "@/lib/badges";
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -57,9 +65,11 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const modelCounts: Record<string, number> = {};
   const todayDate = new Date().toISOString().split("T")[0];
 
+  const timestamps: string[] = [];
   const completions: Completion[] = sessionsSnapshot.docs.map((doc) => {
     const s = doc.data();
-    const date = s.timestamp?.toDate?.().toISOString().split("T")[0] || "";
+    const ts = s.timestamp?.toDate?.().toISOString() || "";
+    const date = ts.split("T")[0] || "";
     const existing = heatmapData[date];
     heatmapData[date] = {
       tokens: (existing?.tokens ?? 0) + (s.totalTokens || 0),
@@ -73,6 +83,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
       todayCompletions += 1;
     }
     if (s.model) modelCounts[s.model] = (modelCounts[s.model] || 0) + 1;
+    if (ts) timestamps.push(ts);
     return {
       id: doc.id,
       model: s.model,
@@ -80,7 +91,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
       totalTokens: s.totalTokens,
       costUsd: s.costUsd,
       project: s.project,
-      timestamp: s.timestamp?.toDate?.().toISOString() || "",
+      timestamp: ts,
     };
   });
 
@@ -90,6 +101,36 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const currentYear = new Date().getFullYear();
   const memberSince = user.createdAt?.toDate?.()?.getFullYear() || currentYear;
   const years = Array.from({ length: currentYear - memberSince + 1 }, (_, i) => currentYear - i);
+
+  // Badge evaluation
+  const existingBadges: EarnedBadge[] = user.badges || [];
+  const badgeStats = computeBadgeStats({
+    totalTokens,
+    completionCount,
+    heatmap: heatmapData,
+    models: modelCounts,
+    timestamps,
+  });
+  const allBadges: BadgeWithStatus[] = evaluateBadges(badgeStats, existingBadges);
+  const newlyEarnedIds = getNewlyEarnedBadges(allBadges, existingBadges);
+
+  // Persist newly earned badges
+  if (newlyEarnedIds.length > 0) {
+    const now = new Date().toISOString();
+    const updatedBadges: EarnedBadge[] = [
+      ...existingBadges,
+      ...newlyEarnedIds.map((id) => ({ id, unlockedAt: now })),
+    ];
+    await adminDb.collection("users").doc(userDoc.id).update({ badges: updatedBadges });
+    for (const b of allBadges) {
+      if (newlyEarnedIds.includes(b.id)) {
+        b.unlockedAt = now;
+      }
+    }
+  }
+
+  // Goals
+  const goals: Goal[] = user.goals || [];
 
   const initialUser = {
     displayName: user.displayName || "",
@@ -155,6 +196,9 @@ export default async function ProfilePage({ params, searchParams }: Props) {
             initialTodayTokens={todayTokens}
             initialTodayCost={todayCost}
             initialTodayCompletions={todayCompletions}
+            initialBadges={allBadges}
+            initialNewlyEarned={newlyEarnedIds}
+            initialGoals={goals}
           />
         )}
       </div>
