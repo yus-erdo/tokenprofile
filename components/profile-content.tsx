@@ -28,6 +28,9 @@ import {
   getDefaultRange,
   storeRange,
 } from "@/components/ui/date-range-picker";
+import { BadgeShowcase } from "@/components/badge-showcase";
+import { UsageGoals, type Goal } from "@/components/usage-goals";
+import type { BadgeWithStatus } from "@/lib/badges";
 
 export interface Completion {
   id: string;
@@ -74,6 +77,9 @@ interface ProfileContentProps {
   initialTodayCost: number;
   initialTodayCompletions: number;
   initialAnalytics?: AnalyticsData;
+  initialBadges: BadgeWithStatus[];
+  initialNewlyEarned: string[];
+  initialGoals: Goal[];
 }
 
 function computeStats(completions: Completion[]) {
@@ -212,6 +218,9 @@ export function ProfileContent({
   initialTodayCost,
   initialTodayCompletions,
   initialAnalytics,
+  initialBadges,
+  initialNewlyEarned,
+  initialGoals,
 }: ProfileContentProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -415,6 +424,21 @@ export function ProfileContent({
         </div>
         <Heatmap data={heatmapData} year={year} />
       </BentoCard>
+
+      {/* Badges */}
+      <BadgeShowcase
+        initialBadges={initialBadges}
+        initialNewlyEarned={initialNewlyEarned}
+        isOwner={isOwner}
+      />
+
+      {/* Usage Goals */}
+      <UsageGoals
+        goals={initialGoals}
+        todayTokens={todayTokens}
+        todayCompletions={todayCompletions}
+        isOwner={isOwner}
+      />
 
       {/* Analytics — only visible to profile owner */}
       {isOwner && initialAnalytics && <AnalyticsSection initialData={initialAnalytics} />}

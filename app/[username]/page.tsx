@@ -7,6 +7,14 @@ import { ProfileTabs } from "@/components/profile-tabs";
 import { DeveloperTab } from "@/components/developer-tab";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { OnboardingWrapper } from "@/components/onboarding-wrapper";
+import type { Goal } from "@/components/usage-goals";
+import {
+  evaluateBadges,
+  computeBadgeStats,
+  getNewlyEarnedBadges,
+  type EarnedBadge,
+  type BadgeWithStatus,
+} from "@/lib/badges";
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -211,6 +219,36 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   const memberSince = user.createdAt?.toDate?.()?.getFullYear() || currentYear;
   const years = Array.from({ length: currentYear - memberSince + 1 }, (_, i) => currentYear - i);
 
+  // Badge evaluation
+  const existingBadges: EarnedBadge[] = user.badges || [];
+  const badgeStats = computeBadgeStats({
+    totalTokens,
+    completionCount,
+    heatmap: heatmapData,
+    models: modelCounts,
+    timestamps: [], // yearly doc doesn't store individual timestamps; time-based badges evaluated via API
+  });
+  const allBadges: BadgeWithStatus[] = evaluateBadges(badgeStats, existingBadges);
+  const newlyEarnedIds = getNewlyEarnedBadges(allBadges, existingBadges);
+
+  // Persist newly earned badges
+  if (newlyEarnedIds.length > 0) {
+    const now = new Date().toISOString();
+    const updatedBadges: EarnedBadge[] = [
+      ...existingBadges,
+      ...newlyEarnedIds.map((id) => ({ id, unlockedAt: now })),
+    ];
+    await adminDb.collection("users").doc(userDoc.id).update({ badges: updatedBadges });
+    for (const b of allBadges) {
+      if (newlyEarnedIds.includes(b.id)) {
+        b.unlockedAt = now;
+      }
+    }
+  }
+
+  // Goals
+  const goals: Goal[] = user.goals || [];
+
   const initialUser = {
     displayName: user.displayName || "",
     bio: user.bio || "",
@@ -287,6 +325,9 @@ export default async function ProfilePage({ params, searchParams }: Props) {
             initialTodayCost={todayCost}
             initialTodayCompletions={todayCompletions}
             initialAnalytics={initialAnalytics}
+            initialBadges={allBadges}
+            initialNewlyEarned={newlyEarnedIds}
+            initialGoals={goals}
           />
         )}
       </div>
