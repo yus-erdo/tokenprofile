@@ -1,28 +1,33 @@
 /**
- * Backfill daily stats from existing events.
- * Run once: npx tsx scripts/backfill-daily-stats.ts
+ * Backfill yearly stats from existing events.
+ * Run once: npx tsx --require dotenv/config scripts/backfill-daily-stats.ts
+ * Set DOTENV_CONFIG_PATH=.env.local
  */
 import 'dotenv/config'
 import { adminDb } from '../lib/firebase/admin'
+
+interface YearlyStats {
+  totalTokens: number
+  totalCost: number
+  completionCount: number
+  heatmap: Record<string, { tokens: number; completions: number }>
+  models: Record<string, number>
+  modelTokens: Record<string, number>
+  modelCost: Record<string, number>
+  hours: Record<string, number>
+  daily: Record<string, number>
+  dailyTokens: Record<string, number>
+  dailyCost: Record<string, number>
+  updatedAt: Date
+}
 
 async function backfill() {
   console.log('Fetching all events...')
   const eventsSnapshot = await adminDb.collection('events').get()
   console.log(`Found ${eventsSnapshot.size} events`)
 
-  // Group by userId + date
-  const updates = new Map<string, {
-    userId: string
-    date: string
-    tokens: number
-    cost: number
-    completions: number
-    models: Record<string, number>
-    modelTokens: Record<string, number>
-    modelCost: Record<string, number>
-    hours: Record<string, number>
-    dayOfWeek: number
-  }>()
+  // Group by userId + year
+  const yearlyMap = new Map<string, YearlyStats>()
 
   for (const doc of eventsSnapshot.docs) {
     const data = doc.data()
@@ -31,70 +36,69 @@ async function backfill() {
     if (!userId || !timestamp) continue
 
     const dateStr = timestamp.toISOString().slice(0, 10)
-    const hour = timestamp.getUTCHours()
-    const dayOfWeek = timestamp.getUTCDay()
-    const key = `${userId}/${dateStr}`
+    const year = dateStr.slice(0, 4)
+    const hour = String(timestamp.getUTCHours())
+    const day = String(timestamp.getUTCDay())
     const model = data.model || 'unknown'
+    const tokens = data.totalTokens || 0
+    const cost = data.costUsd || 0
+    const key = `${userId}/${year}`
 
-    const existing = updates.get(key) || {
-      userId,
-      date: dateStr,
-      tokens: 0,
-      cost: 0,
-      completions: 0,
-      models: {} as Record<string, number>,
-      modelTokens: {} as Record<string, number>,
-      modelCost: {} as Record<string, number>,
-      hours: {} as Record<string, number>,
-      dayOfWeek,
+    const existing = yearlyMap.get(key) || {
+      totalTokens: 0,
+      totalCost: 0,
+      completionCount: 0,
+      heatmap: {},
+      models: {},
+      modelTokens: {},
+      modelCost: {},
+      hours: {},
+      daily: {},
+      dailyTokens: {},
+      dailyCost: {},
+      updatedAt: new Date(),
     }
 
-    existing.tokens += data.totalTokens || 0
-    existing.cost += data.costUsd || 0
-    existing.completions += 1
+    existing.totalTokens += tokens
+    existing.totalCost += cost
+    existing.completionCount += 1
+
+    // Heatmap
+    if (!existing.heatmap[dateStr]) existing.heatmap[dateStr] = { tokens: 0, completions: 0 }
+    existing.heatmap[dateStr].tokens += tokens
+    existing.heatmap[dateStr].completions += 1
+
+    // Models
     existing.models[model] = (existing.models[model] || 0) + 1
-    existing.modelTokens[model] = (existing.modelTokens[model] || 0) + (data.totalTokens || 0)
-    existing.modelCost[model] = (existing.modelCost[model] || 0) + (data.costUsd || 0)
-    existing.hours[String(hour)] = (existing.hours[String(hour)] || 0) + 1
-    updates.set(key, existing)
+    existing.modelTokens[model] = (existing.modelTokens[model] || 0) + tokens
+    existing.modelCost[model] = (existing.modelCost[model] || 0) + cost
+
+    // Hours
+    existing.hours[hour] = (existing.hours[hour] || 0) + 1
+
+    // Day of week
+    existing.daily[day] = (existing.daily[day] || 0) + 1
+    existing.dailyTokens[day] = (existing.dailyTokens[day] || 0) + tokens
+    existing.dailyCost[day] = (existing.dailyCost[day] || 0) + cost
+
+    yearlyMap.set(key, existing)
   }
 
-  console.log(`Writing ${updates.size} daily stat documents...`)
+  console.log(`Writing ${yearlyMap.size} yearly stat documents...`)
 
-  const batch = adminDb.batch()
-  let count = 0
-
-  for (const [key, stats] of updates) {
-    const [userId, date] = key.split('/')
+  for (const [key, stats] of yearlyMap) {
+    const [userId, year] = key.split('/')
     const ref = adminDb
       .collection('userStats')
       .doc(userId)
-      .collection('daily')
-      .doc(date)
+      .collection('yearly')
+      .doc(year)
 
-    batch.set(ref, {
-      date: stats.date,
-      tokens: stats.tokens,
-      cost: stats.cost,
-      completions: stats.completions,
-      models: stats.models,
-      modelTokens: stats.modelTokens,
-      modelCost: stats.modelCost,
-      hours: stats.hours,
-      dayOfWeek: stats.dayOfWeek,
-      updatedAt: new Date(),
-    })
-
-    count++
-    // Firestore batch limit is 500
-    if (count % 450 === 0) {
-      await batch.commit()
-      console.log(`  Committed ${count} docs...`)
-    }
+    await ref.set(stats)
+    console.log(`  Wrote ${key}: ${stats.completionCount} completions, ${Object.keys(stats.heatmap).length} active days`)
   }
 
-  await batch.commit()
-  console.log(`Done! Wrote ${count} daily stat documents.`)
+  console.log('Done!')
 }
 
 backfill().catch(console.error)

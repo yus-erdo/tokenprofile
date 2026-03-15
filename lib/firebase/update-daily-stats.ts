@@ -10,27 +10,32 @@ interface EventData {
 }
 
 export async function updateDailyStats(event: EventData) {
-  const dateStr = event.timestamp.toISOString().slice(0, 10) // "2026-03-14"
+  const dateStr = event.timestamp.toISOString().slice(0, 10)
+  const year = dateStr.slice(0, 4)
   const hour = event.timestamp.getUTCHours()
-  const day = event.timestamp.getUTCDay() // 0=Sun
+  const day = event.timestamp.getUTCDay()
+  const model = event.model || 'unknown'
 
-  const ref = adminDb
+  const yearlyRef = adminDb
     .collection('userStats')
     .doc(event.userId)
-    .collection('daily')
-    .doc(dateStr)
+    .collection('yearly')
+    .doc(year)
 
-  await ref.set(
+  await yearlyRef.set(
     {
-      date: dateStr,
-      tokens: FieldValue.increment(event.totalTokens),
-      cost: FieldValue.increment(event.costUsd),
-      completions: FieldValue.increment(1),
-      [`models.${event.model || 'unknown'}`]: FieldValue.increment(1),
-      [`modelTokens.${event.model || 'unknown'}`]: FieldValue.increment(event.totalTokens),
-      [`modelCost.${event.model || 'unknown'}`]: FieldValue.increment(event.costUsd),
+      totalTokens: FieldValue.increment(event.totalTokens),
+      totalCost: FieldValue.increment(event.costUsd),
+      completionCount: FieldValue.increment(1),
+      [`heatmap.${dateStr}.tokens`]: FieldValue.increment(event.totalTokens),
+      [`heatmap.${dateStr}.completions`]: FieldValue.increment(1),
+      [`models.${model}`]: FieldValue.increment(1),
+      [`modelTokens.${model}`]: FieldValue.increment(event.totalTokens),
+      [`modelCost.${model}`]: FieldValue.increment(event.costUsd),
       [`hours.${hour}`]: FieldValue.increment(1),
-      dayOfWeek: day,
+      [`daily.${day}`]: FieldValue.increment(1),
+      [`dailyTokens.${day}`]: FieldValue.increment(event.totalTokens),
+      [`dailyCost.${day}`]: FieldValue.increment(event.costUsd),
       updatedAt: new Date(),
     },
     { merge: true }
