@@ -350,7 +350,7 @@ export function ProfileContent({
         <>
           <h2 className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 font-mono-accent mb-3">Recent Completions</h2>
           <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-            {completions.slice(0, 20).map((s, i) => (
+            {completions.slice(0, 5).map((s, i) => (
               <div
                 key={s.id}
                 className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-3 text-sm gap-2 sm:gap-3 ${i !== 0 ? 'border-t border-gray-100 dark:border-gray-800/50' : ''}`}

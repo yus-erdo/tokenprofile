@@ -187,7 +187,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
       .collection("events")
       .where("userId", "==", userDoc.id)
       .orderBy("timestamp", "desc")
-      .limit(20)
+      .limit(5)
       .get();
 
     recentCompletions = recentSnapshot.docs.map((doc) => {
