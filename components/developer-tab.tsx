@@ -61,6 +61,12 @@ export function DeveloperTab() {
         </div>
       </section>
 
+      <section className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">Export Data</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Download your completion history as CSV or JSON.</p>
+        <ExportButtons />
+      </section>
+
       <section className="border border-gray-200 dark:border-gray-800 rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-4">Installation</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -68,6 +74,68 @@ export function DeveloperTab() {
         </p>
         <InstallSection apiKey={data.apiKey} />
       </section>
+    </div>
+  );
+}
+
+// --- Export Section ---
+
+function ExportButtons() {
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [exportMsg, setExportMsg] = useState("");
+
+  async function handleExport(format: "csv" | "json") {
+    setExporting(format);
+    setExportMsg("");
+    try {
+      const res = await fetch(`/api/users/me/export?format=${format}`);
+      if (res.status === 429) {
+        setExportMsg("Rate limited. Please wait 1 minute between exports.");
+        return;
+      }
+      if (!res.ok) {
+        setExportMsg("Export failed. Please try again.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `toqqen-export-${new Date().toISOString().split("T")[0]}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setExportMsg(`${format.toUpperCase()} exported!`);
+      setTimeout(() => setExportMsg(""), 3000);
+    } catch {
+      setExportMsg("Export failed. Please try again.");
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleExport("csv")}
+          disabled={exporting !== null}
+          className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 font-mono-accent press-effect"
+        >
+          {exporting === "csv" ? "Exporting..." : "Download CSV"}
+        </button>
+        <button
+          onClick={() => handleExport("json")}
+          disabled={exporting !== null}
+          className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 font-mono-accent press-effect"
+        >
+          {exporting === "json" ? "Exporting..." : "Download JSON"}
+        </button>
+      </div>
+      {exportMsg && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-mono-accent">{exportMsg}</p>
+      )}
     </div>
   );
 }

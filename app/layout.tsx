@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/theme-provider";
+import { CommandPalette } from "@/components/command-palette";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body className="antialiased bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
         <ThemeProvider>
           <SessionProvider>
+            <CommandPalette />
             {children}
           </SessionProvider>
         </ThemeProvider>

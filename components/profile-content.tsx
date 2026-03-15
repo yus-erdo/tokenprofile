@@ -10,12 +10,20 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase/client";
 import { Heatmap } from "@/components/heatmap";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { BentoCard } from "@/components/ui/bento-card";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { StatCardSkeleton, CompletionItemSkeleton } from "@/components/ui/skeleton";
+import {
+  DateRangePicker,
+  type DateRange,
+  getStoredRange,
+  getDefaultRange,
+  storeRange,
+} from "@/components/ui/date-range-picker";
 
 export interface Completion {
   id: string;
@@ -115,6 +123,15 @@ const STAT_FLASH_STYLE: CSSProperties = {
   display: "inline-block",
 };
 
+function initDateRange(searchParams: URLSearchParams): DateRange {
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  if (from && to) {
+    return { from, to, label: "Custom" };
+  }
+  return getStoredRange() || getDefaultRange();
+}
+
 export function ProfileContent({
   userId,
   username,
@@ -130,6 +147,9 @@ export function ProfileContent({
   initialTodayCost,
   initialTodayCompletions,
 }: ProfileContentProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [dateRange, setDateRange] = useState<DateRange>(() => initDateRange(searchParams));
   const [completions, setCompletions] = useState(initialCompletions);
   const [heatmapData, setHeatmapData] = useState(initialHeatmapData);
   const [totalTokens, setTotalTokens] = useState(initialTotalTokens);
@@ -146,6 +166,17 @@ export function ProfileContent({
   const isFirstSnapshot = useRef(true);
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const statsTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const handleDateRangeChange = useCallback((range: DateRange) => {
+    setDateRange(range);
+    storeRange(range);
+    // Update URL query params for shareability
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("from", range.from);
+    params.set("to", range.to);
+    // Keep year param if present
+    router.replace(`/${username}?${params.toString()}`, { scroll: false });
+  }, [searchParams, router, username]);
 
   const flashHighlights = useCallback((ids: string[]) => {
     if (ids.length === 0) return;
@@ -182,14 +213,14 @@ export function ProfileContent({
 
   useEffect(() => {
     isFirstSnapshot.current = true;
-    const startOfYear = new Date(`${year}-01-01T00:00:00Z`);
-    const endOfYear = new Date(`${year}-12-31T23:59:59Z`);
+    const rangeStart = new Date(`${dateRange.from}T00:00:00Z`);
+    const rangeEnd = new Date(`${dateRange.to}T23:59:59Z`);
 
     const q = query(
       collection(db, "events"),
       where("userId", "==", userId),
-      where("timestamp", ">=", Timestamp.fromDate(startOfYear)),
-      where("timestamp", "<=", Timestamp.fromDate(endOfYear)),
+      where("timestamp", ">=", Timestamp.fromDate(rangeStart)),
+      where("timestamp", "<=", Timestamp.fromDate(rangeEnd)),
       orderBy("timestamp", "desc")
     );
 
@@ -232,7 +263,7 @@ export function ProfileContent({
     });
 
     return () => unsubscribe();
-  }, [userId, year, flashHighlights]);
+  }, [userId, dateRange.from, dateRange.to, flashHighlights]);
 
   return (
     <div className="flex-1 min-w-0 dot-grid-bg">
@@ -297,20 +328,23 @@ export function ProfileContent({
 
       {/* Heatmap */}
       <BentoCard className="mb-6">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
           <h2 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-mono-accent">
             ~ <span>{totalTokens.toLocaleString()}</span> tokens in {year}
           </h2>
-          <div className="flex gap-1">
-            {years.map((y) => (
-              <a
-                key={y}
-                href={`/${username}?year=${y}`}
-                className={`px-2 py-1 text-xs rounded font-mono-accent press-effect ${y === year ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-              >
-                {y}
-              </a>
-            ))}
+          <div className="flex items-center gap-2">
+            <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+            <div className="flex gap-1">
+              {years.map((y) => (
+                <a
+                  key={y}
+                  href={`/${username}?year=${y}`}
+                  className={`px-2 py-1 text-xs rounded font-mono-accent press-effect ${y === year ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                >
+                  {y}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
         <Heatmap data={heatmapData} year={year} />
